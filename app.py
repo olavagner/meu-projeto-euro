@@ -1,3 +1,7 @@
+# URLs dos arquivos
+url_excel = "https://www.football-data.co.uk/mmz4281/2526/all-euro-data-2025-2026.xlsx"
+url_proximos_jogos = "https://www.football-data.co.uk/fixtures.xlsx"
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -5,6 +9,7 @@ import seaborn as sns
 from io import BytesIO
 import requests
 from datetime import datetime, timedelta
+import time
 
 # Configuração da página
 st.set_page_config(page_title="FutAlgorithm", page_icon="⚽", layout="wide")
@@ -12,8 +17,23 @@ st.set_page_config(page_title="FutAlgorithm", page_icon="⚽", layout="wide")
 st.title("💀 FutAlgorithm - Futebol Europeu 2025-2026 ⚡️ ")
 st.markdown("---")
 
+# Adicionar controle de atualização
+st.sidebar.markdown("### ⚙️ Controle de Atualização")
+atualizar_automatico = st.sidebar.checkbox("Atualização Automática", value=True)
+intervalo_atualizacao = st.sidebar.slider("Intervalo (minutos)", 1, 60, 5)
 
-@st.cache_resource
+if atualizar_automatico:
+    st.sidebar.info(f"📡 Atualizando a cada {intervalo_atualizacao} minutos")
+    # Usar st.rerun() com time.sleep para simular atualização periódica
+    time.sleep(intervalo_atualizacao * 60)
+    st.rerun()
+
+# Botão para atualização manual
+if st.sidebar.button("🔄 Atualizar Agora"):
+    st.rerun()
+
+
+# Remover cache para garantir dados sempre atualizados
 def carregar_dados_excel(url):
     try:
         response = requests.get(url)
@@ -24,7 +44,8 @@ def carregar_dados_excel(url):
         todas_abas = pd.read_excel(excel_file, sheet_name=None)
         abas_disponiveis = list(todas_abas.keys())
 
-        st.success(f"✅ Arquivo carregado com sucesso! {len(abas_disponiveis)} ligas encontradas")
+        st.success(
+            f"✅ Arquivo carregado com sucesso! {len(abas_disponiveis)} ligas encontradas - {datetime.now().strftime('%H:%M:%S')}")
         return todas_abas, abas_disponiveis
 
     except Exception as e:
@@ -32,7 +53,6 @@ def carregar_dados_excel(url):
         return None, None
 
 
-@st.cache_resource
 def carregar_proximos_jogos(url):
     try:
         response = requests.get(url)
@@ -43,7 +63,7 @@ def carregar_proximos_jogos(url):
         df_jogos = pd.read_excel(excel_file)
 
         # Manter todas as colunas do arquivo original
-        st.success("✅ Dados do simulador carregados com sucesso!")
+        st.success(f"✅ Dados do simulador carregados com sucesso! - {datetime.now().strftime('%H:%M:%S')}")
         return df_jogos
 
     except Exception as e:
@@ -51,13 +71,12 @@ def carregar_proximos_jogos(url):
         return None
 
 
-# URLs dos arquivos
-url_excel = "https://www.football-data.co.uk/mmz4281/2526/all-euro-data-2025-2026.xlsx"
-url_proximos_jogos = "https://www.football-data.co.uk/fixtures.xlsx"
-
-# Carregar dados
+# Carregar dados SEM cache para sempre obter versões atualizadas
 todas_abas, abas_disponiveis = carregar_dados_excel(url_excel)
 df_proximos_jogos = carregar_proximos_jogos(url_proximos_jogos)
+
+# Exibir hora da última atualização
+st.sidebar.markdown(f"**Última atualização:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
 
 # Mapeamento completo com as 18 ligas principais
 mapeamento_ligas = {
@@ -525,6 +544,7 @@ def calcular_estatisticas_time(df_liga, nome_time):
 
     return estatisticas, todos_jogos
 
+
 # Função para analisar sequências e dar dicas
 def analisar_sequencias(todos_jogos, nome_time):
     """Analisa as sequências dos últimos 5 jogos e fornece dicas"""
@@ -609,11 +629,11 @@ if todas_abas is not None and abas_disponiveis:
         st.header("🏆 Atualização dos jogos até 24h antes de cada rodada.")
 
         if df_proximos_jogos is not None and not df_proximos_jogos.empty:
-            # Selecionar apenas as colunas desejadas
+            # Selecionar apenas las colunas desejadas
             colunas_desejadas = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365>2.5',
                                  'B365<2.5']
 
-            # Verificar quais colunas existem no dataframe
+            # Verificar quais colunas existen no dataframe
             colunas_existentes = [col for col in colunas_desejadas if col in df_proximos_jogos.columns]
 
             # Criar novo dataframe apenas com as colunas desejadas
@@ -703,7 +723,85 @@ if todas_abas is not None and abas_disponiveis:
 
             # Exibir dados filtrados
             st.subheader("⚡️ Jogos da Rodada ⚡️ ")
-            st.dataframe(df_filtrado, use_container_width=True, height=500)
+
+            # ⭐⭐ NOVO: Filtros individuais para cada coluna ⭐⭐
+            st.subheader("🎯 Filtros por Coluna")
+
+            # Criar colunas para os filtros
+            num_colunas = 4
+            colunas_filtros = st.columns(num_colunas)
+
+            filtros_aplicados = {}
+
+            # Aplicar filtros para cada coluna
+            for i, coluna in enumerate(df_filtrado.columns):
+                col_idx = i % num_colunas
+
+                with colunas_filtros[col_idx]:
+                    if df_filtrado[coluna].dtype == 'object':
+                        # Para colunas textuais
+                        valores_unicos = ['TODOS'] + sorted(df_filtrado[coluna].dropna().unique().tolist())
+                        filtro_selecionado = st.selectbox(
+                            f"{coluna}:",
+                            valores_unicos,
+                            key=f"filtro_{coluna}"
+                        )
+                        filtros_aplicados[coluna] = filtro_selecionado
+                    else:
+                        # Para colunas numéricas
+                        try:
+                            valores_numericos = pd.to_numeric(df_filtrado[coluna], errors='coerce')
+                            valores_validos = valores_numericos.dropna()
+
+                            if len(valores_validos) > 0:
+                                min_val = float(valores_validos.min())
+                                max_val = float(valores_validos.max())
+
+                                # Para probabilidades (valores entre 0-100)
+                                if coluna in ['Vitória', 'Empate', 'Derrota', 'Over 2.5 FT', 'Under 2.5 FT']:
+                                    filtro_min, filtro_max = st.slider(
+                                        f"{coluna} (%):",
+                                        0.0, 100.0,
+                                        (0.0, 100.0),
+                                        key=f"filtro_{coluna}"
+                                    )
+                                else:
+                                    # Para odds (valores podem ser maiores)
+                                    filtro_min, filtro_max = st.slider(
+                                        f"{coluna}:",
+                                        min_val, max_val,
+                                        (min_val, max_val),
+                                        key=f"filtro_{coluna}"
+                                    )
+
+                                filtros_aplicados[coluna] = (filtro_min, filtro_max)
+                        except:
+                            pass
+
+            # Aplicar os filtros ao dataframe
+            df_filtrado_final = df_filtrado.copy()
+
+            for coluna, filtro in filtros_aplicados.items():
+                if coluna in df_filtrado_final.columns:
+                    if isinstance(filtro, str):
+                        if filtro != 'TODOS':
+                            df_filtrado_final = df_filtrado_final[df_filtrado_final[coluna] == filtro]
+                    elif isinstance(filtro, tuple):
+                        # Converter para numérico para comparação
+                        try:
+                            df_filtrado_final[coluna] = pd.to_numeric(df_filtrado_final[coluna], errors='coerce')
+                            df_filtrado_final = df_filtrado_final[
+                                (df_filtrado_final[coluna] >= filtro[0]) &
+                                (df_filtrado_final[coluna] <= filtro[1])
+                                ]
+                        except:
+                            pass
+
+            # Mostrar contador de resultados
+            st.info(f"📊 **{len(df_filtrado_final)} jogos encontrados** após aplicar filtros")
+
+            # Exibir tabela com filtros aplicados
+            st.dataframe(df_filtrado_final, use_container_width=True, height=500)
 
             # Estatísticas do simulador (usando valores numéricos para cálculos)
             st.subheader("📊 Estatísticas")
@@ -724,14 +822,14 @@ if todas_abas is not None and abas_disponiveis:
             col1, col2, col3, col4, col5 = st.columns(5)
 
             with col1:
-                st.metric("Total de Jogos", len(df_filtrado))
+                st.metric("Total de Jogos", len(df_filtrado_final))
 
             with col2:
-                st.metric("Ligas Diferentes", df_filtrado['Liga'].nunique())
+                st.metric("Ligas Diferentes", df_filtrado_final['Liga'].nunique())
 
             with col3:
-                if 'Data' in df_filtrado.columns:
-                    dias = df_filtrado['Data'].nunique()
+                if 'Data' in df_filtrado_final.columns:
+                    dias = df_filtrado_final['Data'].nunique()
                     st.metric("Dias com Jogos", dias)
 
             with col4:
@@ -746,7 +844,7 @@ if todas_abas is not None and abas_disponiveis:
 
             # Download dos dados
             st.subheader("💾 Exportar Dados")
-            csv = df_filtrado.to_csv(index=False, sep=';')
+            csv = df_filtrado_final.to_csv(index=False, sep=';')
             st.download_button(
                 label="📥 Download CSV",
                 data=csv,
@@ -808,7 +906,7 @@ if todas_abas is not None and abas_disponiveis:
                             total_gols = df_liga['FTHG'].sum() + df_liga['FTAG'].sum()
                             media_gols = total_gols / relatorio['Total de Jogos']
                             with col2:
-                                st.metric("Média de Gols por Jogo", f"{media_gols:.2f}")
+                                st.metric("Média de Gols", f"{media_gols:.2f}")
 
                         # Calcular porcentagem de jogos com gols
                         if 'FTHG' in df_liga.columns and 'FTAG' in df_liga.columns:
@@ -820,7 +918,7 @@ if todas_abas is not None and abas_disponiveis:
                         # Exibir estatísticas em tabela organizada
                         st.subheader("📋 Estatísticas Detalhadas")
 
-                        # Organizar estatísticas em categorias
+                        # Organizar estatísticas in categorias
                         categorias = {
                             'Resultados': ['Vitória do Mandante', 'Empate', 'Vitória do Visitante'],
                             'Estatísticas de Gols': ['Gols HT por Jogo', 'Gols FT por Jogo',
@@ -927,115 +1025,123 @@ if todas_abas is not None and abas_disponiveis:
                             estatisticas, todos_jogos = calcular_estatisticas_time(df_liga_time, time)
 
                             if estatisticas:
-                                # Estilo CSS para texto menor
+                                # ⭐⭐ MODIFICAÇÃO: Aumentar o tamanho da fonte ⭐⭐
                                 st.markdown("""
                                     <style>
-                                    .small-text {
-                                        font-size: 14px;
-                                        margin-bottom: 5px;
+                                    .medium-text {
+                                        font-size: 16px;
+                                        margin-bottom: 8px;
+                                        line-height: 1.4;
                                     }
                                     .section-divider {
-                                        border-top: 1px solid #ddd;
-                                        margin: 10px 0;
-                                        padding-top: 10px;
+                                        border-top: 2px solid #ddd;
+                                        margin: 15px 0;
+                                        padding-top: 15px;
+                                    }
+                                    .highlight {
+                                        font-weight: bold;
+                                        color: #1f77b4;
                                     }
                                     </style>
                                 """, unsafe_allow_html=True)
 
                                 # Estatísticas Básicas
                                 st.markdown(
-                                    f'<div class="small-text"><strong>Jogos = {estatisticas["Total Jogos"]}</strong></div>',
+                                    f'<div class="medium-text"><span class="highlight">Jogos</span> = {estatisticas["Total Jogos"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Jogos 0.5 HT = {estatisticas["Over 0.5 HT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Jogos 0.5 HT</span> = {estatisticas["Over 0.5 HT"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Jogos 0.5 FT = {estatisticas["Over 0.5 FT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Jogos 0.5 FT</span> = {estatisticas["Over 0.5 FT"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Jogos 1.5 FT = {estatisticas["Over 1.5 FT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Jogos 1.5 FT</span> = {estatisticas["Over 1.5 FT"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Jogos 2.5 FT = {estatisticas["Over 2.5 FT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Jogos 2.5 FT</span> = {estatisticas["Over 2.5 FT"]}</div>',
                                     unsafe_allow_html=True)
-                                st.markdown(f'<div class="small-text">Jogos BTTS = {estatisticas["BTTS"]}</div>',
-                                            unsafe_allow_html=True)
+                                st.markdown(
+                                    f'<div class="medium-text"><span class="highlight">Jogos BTTS</span> = {estatisticas["BTTS"]}</div>',
+                                    unsafe_allow_html=True)
 
                                 vit_percent = (estatisticas["Vitórias"] / estatisticas["Total Jogos"] * 100) if \
-                                estatisticas["Total Jogos"] > 0 else 0
+                                    estatisticas["Total Jogos"] > 0 else 0
                                 emp_percent = (estatisticas["Empates"] / estatisticas["Total Jogos"] * 100) if \
-                                estatisticas["Total Jogos"] > 0 else 0
+                                    estatisticas["Total Jogos"] > 0 else 0
                                 der_percent = (estatisticas["Derrotas"] / estatisticas["Total Jogos"] * 100) if \
-                                estatisticas["Total Jogos"] > 0 else 0
+                                    estatisticas["Total Jogos"] > 0 else 0
 
                                 st.markdown(
-                                    f'<div class="small-text">Vitórias % = {estatisticas["Vitórias"]}/{estatisticas["Total Jogos"]} {vit_percent:.1f}%</div>',
+                                    f'<div class="medium-text"><span class="highlight">Vitórias %</span> = {estatisticas["Vitórias"]}/{estatisticas["Total Jogos"]} {vit_percent:.1f}%</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Empates % = {estatisticas["Empates"]}/{estatisticas["Total Jogos"]} {emp_percent:.1f}%</div>',
+                                    f'<div class="medium-text"><span class="highlight">Empates %</span> = {estatisticas["Empates"]}/{estatisticas["Total Jogos"]} {emp_percent:.1f}%</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Derrotas % = {estatisticas["Derrotas"]}/{estatisticas["Total Jogos"]} {der_percent:.1f}%</div>',
+                                    f'<div class="medium-text"><span class="highlight">Derrotas %</span> = {estatisticas["Derrotas"]}/{estatisticas["Total Jogos"]} {der_percent:.1f}%</div>',
                                     unsafe_allow_html=True)
 
                                 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
                                 # Estatísticas de Gols
                                 st.markdown(
-                                    f'<div class="small-text">Média de Gols Marcados HT = {estatisticas["Média Gols Marcados HT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Média de Gols Marcados HT</span> = {estatisticas["Média Gols Marcados HT"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Média de Gols Sofridos HT = {estatisticas["Média Gols Sofridos HT"]}</div>',
-                                    unsafe_allow_html=True)
-                                st.markdown(f'<div class="small-text">Média HT = {estatisticas["Média HT"]}</div>',
-                                            unsafe_allow_html=True)
-                                st.markdown(
-                                    f'<div class="small-text">Média de Gols Marcados FT = {estatisticas["Média Gols Marcados FT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Média de Gols Sofridos HT</span> = {estatisticas["Média Gols Sofridos HT"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Média de Gols Sofridos FT = {estatisticas["Média Gols Sofridos FT"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Média HT</span> = {estatisticas["Média HT"]}</div>',
                                     unsafe_allow_html=True)
-                                st.markdown(f'<div class="small-text">Média FT = {estatisticas["Média FT"]}</div>',
-                                            unsafe_allow_html=True)
+                                st.markdown(
+                                    f'<div class="medium-text"><span class="highlight">Média de Gols Marcados FT</span> = {estatisticas["Média Gols Marcados FT"]}</div>',
+                                    unsafe_allow_html=True)
+                                st.markdown(
+                                    f'<div class="medium-text"><span class="highlight">Média de Gols Sofridos FT</span> = {estatisticas["Média Gols Sofridos FT"]}</div>',
+                                    unsafe_allow_html=True)
+                                st.markdown(
+                                    f'<div class="medium-text"><span class="highlight">Média FT</span> = {estatisticas["Média FT"]}</div>',
+                                    unsafe_allow_html=True)
 
                                 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
                                 # Estatísticas dos Últimos 5 Jogos
                                 st.markdown(
-                                    f'<div class="small-text">Total de Chutes no Gol a favor | Últimos 5 Jogos = {estatisticas["Chutes no Gol (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de Chutes no Gol a favor | Últimos 5 Jogos</span> = {estatisticas["Chutes no Gol (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total de Chutes a favor | Últimos 5 Jogos = {estatisticas["Chutes (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de Chutes a favor | Últimos 5 Jogos</span> = {estatisticas["Chutes (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total Escanteios a Favor | Últimos 5 Jogos = {estatisticas["Escanteios a Favor (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total Escanteios a Favor | Últimos 5 Jogos</span> = {estatisticas["Escanteios a Favor (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total de Escanteios por jogo | Últimos 5 Jogos = {estatisticas["Escanteios Total (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de Escanteios por jogo | Últimos 5 Jogos</span> = {estatisticas["Escanteios Total (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total Cartão Amarelo a Favor | Últimos 5 Jogos = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total Cartão Amarelo a Favor | Últimos 5 Jogos</span> = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total de Cartão Amarelo por jogo | Últimos 5 Jogos = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de Cartão Amarelo por jogo | Últimos 5 Jogos</span> = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total de faltas a favor | Últimos 5 Jogos = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de faltas a favor | Últimos 5 Jogos</span> = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
                                 st.markdown(
-                                    f'<div class="small-text">Total de faltas por jogo | Últimos 5 Jogos = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
+                                    f'<div class="medium-text"><span class="highlight">Total de faltas por jogo | Últimos 5 Jogos</span> = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
                                     unsafe_allow_html=True)
 
                                 # Análise de sequências e dicas
                                 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
                                 st.markdown(
-                                    '<div class="small-text"><strong>💡 Análise de Sequências (Últimos 5 Jogos):</strong></div>',
+                                    '<div class="medium-text"><span class="highlight">💡 Análise de Sequências (Últimos 5 Jogos):</span></div>',
                                     unsafe_allow_html=True)
 
                                 dicas = analisar_sequencias(todos_jogos, time)
 
                                 for dica in dicas:
-                                    st.markdown(f'<div class="small-text">{dica}</div>', unsafe_allow_html=True)
+                                    st.markdown(f'<div class="medium-text">{dica}</div>', unsafe_allow_html=True)
 
                                 # Download das estatísticas
                                 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
