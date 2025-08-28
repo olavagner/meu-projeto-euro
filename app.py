@@ -539,7 +539,16 @@ def calcular_estatisticas_time(df_liga, nome_time):
             map(str, escanteios_contra_lista)) if escanteios_contra_lista else 'N/A',
         'Escanteios Total (Últimos 5)': '-'.join(map(str, escanteios_total_lista)) if escanteios_total_lista else 'N/A',
         'Cartões Amarelos (Últimos 5)': '-'.join(map(str, cartoes_amarelos_lista)) if cartoes_amarelos_lista else 'N/A',
-        'Faltas Total (Últimos 5)': '-'.join(map(str, faltas_total_lista)) if faltas_total_lista else 'N/A'
+        'Faltas Total (Últimos 5)': '-'.join(map(str, faltas_total_lista)) if faltas_total_lista else 'N/A',
+        # Sequências para alertas
+        'Sequencia Chutes Gol': '-'.join(map(str, chutes_gol_lista)) if chutes_gol_lista else 'N/A',
+        'Sequencia Chutes': '-'.join(map(str, chutes_lista)) if chutes_lista else 'N/A',
+        'Sequencia Escanteios Favor': '-'.join(map(str, escanteios_favor_lista)) if escanteios_favor_lista else 'N/A',
+        'Sequencia Escanteios Contra': '-'.join(
+            map(str, escanteios_contra_lista)) if escanteios_contra_lista else 'N/A',
+        'Sequencia Escanteios Total': '-'.join(map(str, escanteios_total_lista)) if escanteios_total_lista else 'N/A',
+        'Sequencia Amarelos': '-'.join(map(str, cartoes_amarelos_lista)) if cartoes_amarelos_lista else 'N/A',
+        'Sequencia Faltas': '-'.join(map(str, faltas_total_lista)) if faltas_total_lista else 'N/A'
     }
 
     return estatisticas, todos_jogos
@@ -616,10 +625,125 @@ def analisar_sequencias(todos_jogos, nome_time):
     return dicas
 
 
+# Função para analisar sequências estatísticas relevantes
+def analisar_sequencias_estatisticas(todos_jogos, nome_time, estatisticas):
+    """Analisa sequências estatísticas relevantes nos últimos 5 jogos"""
+
+    if len(todos_jogos) < 5:
+        return ["⚠️ Time precisa de pelo menos 5 jogos para análise de sequência"]
+
+    # Pegar os últimos 5 jogos
+    ultimos_5 = todos_jogos.tail(5)
+
+    alertas = []
+
+    # Listas para armazenar estatísticas dos últimos 5 jogos
+    over_05_ht_seq = []
+    over_05_ft_seq = []
+    over_15_ft_seq = []
+    over_25_ft_seq = []
+    btts_seq = []
+    chutes_favor_seq = []
+    chutes_total_seq = []
+    escanteios_favor_seq = []
+    escanteios_total_seq = []
+    amarelos_favor_seq = []
+
+    for _, jogo in ultimos_5.iterrows():
+        # Determinar se o time é mandante ou visitante
+        if jogo['HomeTeam'] == nome_time:
+            # Time é mandante
+            gols_ht = jogo['HTHG'] + jogo['HTAG'] if 'HTHG' in jogo and 'HTAG' in jogo else 0
+            gols_ft = jogo['FTHG'] + jogo['FTAG'] if 'FTHG' in jogo and 'FTAG' in jogo else 0
+            btts_jogo = 1 if (jogo['FTHG'] > 0 and jogo['FTAG'] > 0) else 0
+
+            # Estatísticas de jogo
+            chutes_favor = jogo['HS'] if 'HS' in jogo and not pd.isna(jogo['HS']) else 0
+            chutes_total = chutes_favor + (jogo['AS'] if 'AS' in jogo and not pd.isna(jogo['AS']) else 0)
+            escanteios_favor = jogo['HC'] if 'HC' in jogo and not pd.isna(jogo['HC']) else 0
+            escanteios_total = escanteios_favor + (jogo['AC'] if 'AC' in jogo and not pd.isna(jogo['AC']) else 0)
+            amarelos_favor = jogo['HY'] if 'HY' in jogo and not pd.isna(jogo['HY']) else 0
+
+        else:
+            # Time é visitante
+            gols_ht = jogo['HTHG'] + jogo['HTAG'] if 'HTHG' in jogo and 'HTAG' in jogo else 0
+            gols_ft = jogo['FTHG'] + jogo['FTAG'] if 'FTHG' in jogo and 'FTAG' in jogo else 0
+            btts_jogo = 1 if (jogo['FTHG'] > 0 and jogo['FTAG'] > 0) else 0
+
+            # Estatísticas de jogo
+            chutes_favor = jogo['AS'] if 'AS' in jogo and not pd.isna(jogo['AS']) else 0
+            chutes_total = chutes_favor + (jogo['HS'] if 'HS' in jogo and not pd.isna(jogo['HS']) else 0)
+            escanteios_favor = jogo['AC'] if 'AC' in jogo and not pd.isna(jogo['AC']) else 0
+            escanteios_total = escanteios_favor + (jogo['HC'] if 'HC' in jogo and not pd.isna(jogo['HC']) else 0)
+            amarelos_favor = jogo['AY'] if 'AY' in jogo and not pd.isna(jogo['AY']) else 0
+
+        # Acumular estatísticas
+        over_05_ht_seq.append(1 if gols_ht > 0.5 else 0)
+        over_05_ft_seq.append(1 if gols_ft > 0.5 else 0)
+        over_15_ft_seq.append(1 if gols_ft > 1.5 else 0)
+        over_25_ft_seq.append(1 if gols_ft > 2.5 else 0)
+        btts_seq.append(btts_jogo)
+        chutes_favor_seq.append(chutes_favor)
+        chutes_total_seq.append(chutes_total)
+        escanteios_favor_seq.append(escanteios_favor)
+        escanteios_total_seq.append(escanteios_total)
+        amarelos_favor_seq.append(amarelos_favor)
+
+    # Verificar sequências de Over 0.5 HT
+    if sum(over_05_ht_seq) == 5:
+        alertas.append(f"✅ {nome_time} tem 5 jogos seguidos com Over 0.5 Gols HT")
+
+    # Verificar sequências de Over 0.5 FT
+    if sum(over_05_ft_seq) == 5:
+        alertas.append(f"✅ {nome_time} tem 5 jogos seguidos com Over 0.5 Gols FT")
+
+    # Verificar sequências de Over 1.5 FT
+    if sum(over_15_ft_seq) == 5:
+        alertas.append(f"✅ {nome_time} tem 5 jogos seguidos com Over 1.5 Gols FT")
+
+    # Verificar sequências de Over 2.5 FT
+    if sum(over_25_ft_seq) == 5:
+        alertas.append(f"✅ {nome_time} tem 5 jogos seguidos com Over 2.5 Gols FT")
+
+    # Verificar sequências de BTTS
+    if sum(btts_seq) == 5:
+        alertas.append(f"✅ {nome_time} tem 5 jogos seguidos com BTTS")
+
+    # Verificar sequências de Chutes a Favor >= 11
+    if all(chutes >= 11 for chutes in chutes_favor_seq):
+        alertas.append(
+            f"✅ {nome_time} tem 5 jogos seguidos com Total de Chutes a Favor >=11 | Últimos 5 Jogos = {'-'.join(map(str, chutes_favor_seq))}")
+
+    # Verificar sequências de Chutes Totais >= 17
+    if all(chutes >= 17 for chutes in chutes_total_seq):
+        alertas.append(
+            f"✅ {nome_time} tem 5 jogos seguidos com Total de Chutes >=17 | Últimos 5 Jogos = {'-'.join(map(str, chutes_total_seq))}")
+
+    # Verificar sequências de Escanteios a Favor >= 7
+    if all(escanteios >= 7 for escanteios in escanteios_favor_seq):
+        alertas.append(
+            f"✅ {nome_time} tem 5 jogos seguidos com Total Escanteios a Favor >=7 | Últimos 5 Jogos = {'-'.join(map(str, escanteios_favor_seq))}")
+
+    # Verificar sequências de Escanteios Totais >= 7
+    if all(escanteios >= 7 for escanteios in escanteios_total_seq):
+        alertas.append(
+            f"✅ {nome_time} tem 5 jogos seguidos com Total Escanteios >=7 | Últimos 5 Jogos = {'-'.join(map(str, escanteios_total_seq))}")
+
+    # Verificar sequências de Cartões Amarelos a Favor >= 2
+    if all(amarelos >= 2 for amarelos in amarelos_favor_seq):
+        alertas.append(
+            f"✅ {nome_time} tem 5 jogos seguidos com Total Cartão Amarelo a Favor >=2 | Últimos 5 Jogos = {'-'.join(map(str, amarelos_favor_seq))}")
+
+    if not alertas:
+        alertas.append("📊 Sem sequências estatísticas relevantes nos últimos 5 jogos")
+
+    return alertas
+
+
 # Criar abas principais
 if todas_abas is not None and abas_disponiveis:
-    # Criar abas: Simulador primeiro, depois Relatórios, depois Times, depois cada liga
-    nomes_abas = ["🎯 Simulador", "📊 Relatórios Liga", "👥 Análise por Time"]
+    # Criar abas: Simulador primeiro, depois Relatórios, depois Times, depois Buscar Equipe, depois cada liga
+    nomes_abas = ["🎯 Simulador", "📊 Relatórios Liga", "👥 Análise por Time", "🔍 Buscar Equipe"]
     nomes_abas.extend([mapeamento_ligas.get(aba, f"{aba} (Liga)") for aba in abas_disponiveis])
 
     tabs = st.tabs(nomes_abas)
@@ -724,84 +848,11 @@ if todas_abas is not None and abas_disponiveis:
             # Exibir dados filtrados
             st.subheader("⚡️ Jogos da Rodada ⚡️ ")
 
-            # ⭐⭐ NOVO: Filtros individuais para cada coluna ⭐⭐
-            st.subheader("🎯 Filtros por Coluna")
-
-            # Criar colunas para os filtros
-            num_colunas = 4
-            colunas_filtros = st.columns(num_colunas)
-
-            filtros_aplicados = {}
-
-            # Aplicar filtros para cada coluna
-            for i, coluna in enumerate(df_filtrado.columns):
-                col_idx = i % num_colunas
-
-                with colunas_filtros[col_idx]:
-                    if df_filtrado[coluna].dtype == 'object':
-                        # Para colunas textuais
-                        valores_unicos = ['TODOS'] + sorted(df_filtrado[coluna].dropna().unique().tolist())
-                        filtro_selecionado = st.selectbox(
-                            f"{coluna}:",
-                            valores_unicos,
-                            key=f"filtro_{coluna}"
-                        )
-                        filtros_aplicados[coluna] = filtro_selecionado
-                    else:
-                        # Para colunas numéricas
-                        try:
-                            valores_numericos = pd.to_numeric(df_filtrado[coluna], errors='coerce')
-                            valores_validos = valores_numericos.dropna()
-
-                            if len(valores_validos) > 0:
-                                min_val = float(valores_validos.min())
-                                max_val = float(valores_validos.max())
-
-                                # Para probabilidades (valores entre 0-100)
-                                if coluna in ['Vitória', 'Empate', 'Derrota', 'Over 2.5 FT', 'Under 2.5 FT']:
-                                    filtro_min, filtro_max = st.slider(
-                                        f"{coluna} (%):",
-                                        0.0, 100.0,
-                                        (0.0, 100.0),
-                                        key=f"filtro_{coluna}"
-                                    )
-                                else:
-                                    # Para odds (valores podem ser maiores)
-                                    filtro_min, filtro_max = st.slider(
-                                        f"{coluna}:",
-                                        min_val, max_val,
-                                        (min_val, max_val),
-                                        key=f"filtro_{coluna}"
-                                    )
-
-                                filtros_aplicados[coluna] = (filtro_min, filtro_max)
-                        except:
-                            pass
-
-            # Aplicar os filtros ao dataframe
-            df_filtrado_final = df_filtrado.copy()
-
-            for coluna, filtro in filtros_aplicados.items():
-                if coluna in df_filtrado_final.columns:
-                    if isinstance(filtro, str):
-                        if filtro != 'TODOS':
-                            df_filtrado_final = df_filtrado_final[df_filtrado_final[coluna] == filtro]
-                    elif isinstance(filtro, tuple):
-                        # Converter para numérico para comparação
-                        try:
-                            df_filtrado_final[coluna] = pd.to_numeric(df_filtrado_final[coluna], errors='coerce')
-                            df_filtrado_final = df_filtrado_final[
-                                (df_filtrado_final[coluna] >= filtro[0]) &
-                                (df_filtrado_final[coluna] <= filtro[1])
-                                ]
-                        except:
-                            pass
-
             # Mostrar contador de resultados
-            st.info(f"📊 **{len(df_filtrado_final)} jogos encontrados** após aplicar filtros")
+            st.info(f"📊 **{len(df_filtrado)} jogos encontrados**")
 
-            # Exibir tabela com filtros aplicados
-            st.dataframe(df_filtrado_final, use_container_width=True, height=500)
+            # Exibir tabela com filtros nos cabeçalhos
+            st.dataframe(df_filtrado, use_container_width=True, height=500)
 
             # Estatísticas do simulador (usando valores numéricos para cálculos)
             st.subheader("📊 Estatísticas")
@@ -822,14 +873,14 @@ if todas_abas is not None and abas_disponiveis:
             col1, col2, col3, col4, col5 = st.columns(5)
 
             with col1:
-                st.metric("Total de Jogos", len(df_filtrado_final))
+                st.metric("Total de Jogos", len(df_filtrado))
 
             with col2:
-                st.metric("Ligas Diferentes", df_filtrado_final['Liga'].nunique())
+                st.metric("Ligas Diferentes", df_filtrado['Liga'].nunique())
 
             with col3:
-                if 'Data' in df_filtrado_final.columns:
-                    dias = df_filtrado_final['Data'].nunique()
+                if 'Data' in df_filtrado.columns:
+                    dias = df_filtrado['Data'].nunique()
                     st.metric("Dias com Jogos", dias)
 
             with col4:
@@ -844,12 +895,13 @@ if todas_abas is not None and abas_disponiveis:
 
             # Download dos dados
             st.subheader("💾 Exportar Dados")
-            csv = df_filtrado_final.to_csv(index=False, sep=';')
+            csv = df_filtrado.to_csv(index=False, sep=';')
             st.download_button(
                 label="📥 Download CSV",
                 data=csv,
                 file_name="simulador_apostas.csv",
-                mime="text/csv"
+                mime="text/csv",
+                key="download_simulador"
             )
 
         else:
@@ -962,7 +1014,8 @@ if todas_abas is not None and abas_disponiveis:
                             label="📥 Download Relatório CSV",
                             data=csv,
                             file_name=f"relatorio_{codigo_liga_selecionada}.csv",
-                            mime="text/csv"
+                            mime="text/csv",
+                            key=f"download_relatorio_{codigo_liga_selecionada}"
                         )
 
                     else:
@@ -1042,6 +1095,13 @@ if todas_abas is not None and abas_disponiveis:
                                         font-weight: bold;
                                         color: #1f77b4;
                                     }
+                                    .alert-text {
+                                        font-size: 16px;
+                                        margin-bottom: 8px;
+                                        line-height: 1.4;
+                                        color: #ff4b4b;
+                                        font-weight: bold;
+                                    }
                                     </style>
                                 """, unsafe_allow_html=True)
 
@@ -1066,11 +1126,11 @@ if todas_abas is not None and abas_disponiveis:
                                     unsafe_allow_html=True)
 
                                 vit_percent = (estatisticas["Vitórias"] / estatisticas["Total Jogos"] * 100) if \
-                                    estatisticas["Total Jogos"] > 0 else 0
+                                estatisticas["Total Jogos"] > 0 else 0
                                 emp_percent = (estatisticas["Empates"] / estatisticas["Total Jogos"] * 100) if \
-                                    estatisticas["Total Jogos"] > 0 else 0
+                                estatisticas["Total Jogos"] > 0 else 0
                                 der_percent = (estatisticas["Derrotas"] / estatisticas["Total Jogos"] * 100) if \
-                                    estatisticas["Total Jogos"] > 0 else 0
+                                estatisticas["Total Jogos"] > 0 else 0
 
                                 st.markdown(
                                     f'<div class="medium-text"><span class="highlight">Vitórias %</span> = {estatisticas["Vitórias"]}/{estatisticas["Total Jogos"]} {vit_percent:.1f}%</div>',
@@ -1139,13 +1199,21 @@ if todas_abas is not None and abas_disponiveis:
                                     unsafe_allow_html=True)
 
                                 dicas = analisar_sequencias(todos_jogos, time)
-
                                 for dica in dicas:
                                     st.markdown(f'<div class="medium-text">{dica}</div>', unsafe_allow_html=True)
 
+                                # Alertas estatísticos
+                                st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+                                st.markdown(
+                                    '<div class="medium-text"><span class="highlight" style="color: #ff4b4b;">🚨 ALERTAS ESTATÍSTICOS (Últimos 5 Jogos):</span></div>',
+                                    unsafe_allow_html=True)
+
+                                alertas = analisar_sequencias_estatisticas(todos_jogos, time, estatisticas)
+                                for alerta in alertas:
+                                    st.markdown(f'<div class="alert-text">{alerta}</div>', unsafe_allow_html=True)
+
                                 # Download das estatísticas
                                 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
                                 df_estatisticas = pd.DataFrame([estatisticas])
                                 csv = df_estatisticas.to_csv(index=False, sep=';')
 
@@ -1153,16 +1221,224 @@ if todas_abas is not None and abas_disponiveis:
                                     label=f"📥 Download Estatísticas {time}",
                                     data=csv,
                                     file_name=f"estatisticas_{time}.csv",
-                                    mime="text/csv"
+                                    mime="text/csv",
+                                    key=f"download_time_{time}_{codigo_liga_selecionada_time}"
                                 )
                 else:
                     st.warning("Nenhum time encontrado nesta liga.")
             else:
                 st.error("Liga selecionada não encontrada nos dados.")
 
+    # ABA 4: BUSCAR EQUIPE (nova aba)
+    with tabs[3]:
+        st.header("🔍 Buscar Equipe - Todas as Ligas")
+
+        if todas_abas is not None and abas_disponiveis:
+            # Coletar todos os times de todas as ligas
+            todos_times_todas_ligas = []
+            times_por_liga = {}
+
+            for codigo_liga in abas_disponiveis:
+                df_liga = todas_abas[codigo_liga]
+                nome_liga = mapeamento_ligas.get(codigo_liga, f"{codigo_liga} (Liga)")
+
+                # Obter times da liga
+                times_mandantes = df_liga['HomeTeam'].unique() if 'HomeTeam' in df_liga.columns else []
+                times_visitantes = df_liga['AwayTeam'].unique() if 'AwayTeam' in df_liga.columns else []
+                times_liga = sorted(list(set(list(times_mandantes) + list(times_visitantes))))
+
+                # Armazenar informações
+                for time in times_liga:
+                    todos_times_todas_ligas.append((time, nome_liga, codigo_liga))
+                    if time not in times_por_liga:
+                        times_por_liga[time] = []
+                    times_por_liga[time].append(nome_liga)
+
+            # Ordenar times alfabeticamente
+            todos_times_todas_ligas.sort(key=lambda x: x[0])
+
+            # Busca rápida por nome do time
+            st.subheader("🔎 Busca Rápida")
+            termo_busca = st.text_input("Digite o nome do time:", "")
+
+            # Filtrar times com base na busca
+            times_filtrados = todos_times_todas_ligas
+            if termo_busca:
+                times_filtrados = [t for t in todos_times_todas_ligas if termo_busca.lower() in t[0].lower()]
+
+            st.info(f"📋 Encontrados {len(times_filtrados)} times")
+
+            # Exibir todos os times em expanders
+            st.subheader("📋 Lista de Times (Ordenados Alfabeticamente)")
+
+            for time_info in times_filtrados:
+                time_nome, liga_nome, codigo_liga = time_info
+
+                with st.expander(f"⚽ {time_nome} - {liga_nome}"):
+                    # Carregar dados da liga específica
+                    df_liga_especifica = todas_abas[codigo_liga]
+
+                    # Calcular estatísticas do time
+                    estatisticas, todos_jogos = calcular_estatisticas_time(df_liga_especifica, time_nome)
+
+                    if estatisticas:
+                        # Aplicar o mesmo estilo da aba "Análise por Time"
+                        st.markdown("""
+                            <style>
+                            .medium-text {
+                                font-size: 16px;
+                                margin-bottom: 8px;
+                                line-height: 1.4;
+                            }
+                            .section-divider {
+                                border-top: 2px solid #ddd;
+                                margin: 15px 0;
+                                padding-top: 15px;
+                            }
+                            .highlight {
+                                font-weight: bold;
+                                color: #1f77b4;
+                            }
+                            .alert-text {
+                                font-size: 16px;
+                                margin-bottom: 8px;
+                                line-height: 1.4;
+                                color: #ff4b4b;
+                                font-weight: bold;
+                            }
+                            </style>
+                        """, unsafe_allow_html=True)
+
+                        # Estatísticas Básicas
+                        st.markdown(f'<div class="medium-text"><span class="highlight">Liga</span> = {liga_nome}</div>',
+                                    unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos</span> = {estatisticas["Total Jogos"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos 0.5 HT</span> = {estatisticas["Over 0.5 HT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos 0.5 FT</span> = {estatisticas["Over 0.5 FT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos 1.5 FT</span> = {estatisticas["Over 1.5 FT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos 2.5 FT</span> = {estatisticas["Over 2.5 FT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Jogos BTTS</span> = {estatisticas["BTTS"]}</div>',
+                            unsafe_allow_html=True)
+
+                        vit_percent = (estatisticas["Vitórias"] / estatisticas["Total Jogos"] * 100) if estatisticas[
+                                                                                                            "Total Jogos"] > 0 else 0
+                        emp_percent = (estatisticas["Empates"] / estatisticas["Total Jogos"] * 100) if estatisticas[
+                                                                                                           "Total Jogos"] > 0 else 0
+                        der_percent = (estatisticas["Derrotas"] / estatisticas["Total Jogos"] * 100) if estatisticas[
+                                                                                                            "Total Jogos"] > 0 else 0
+
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Vitórias %</span> = {estatisticas["Vitórias"]}/{estatisticas["Total Jogos"]} {vit_percent:.1f}%</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Empates %</span> = {estatisticas["Empates"]}/{estatisticas["Total Jogos"]} {emp_percent:.1f}%</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Derrotas %</span> = {estatisticas["Derrotas"]}/{estatisticas["Total Jogos"]} {der_percent:.1f}%</div>',
+                            unsafe_allow_html=True)
+
+                        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+                        # Estatísticas de Gols
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média de Gols Marcados HT</span> = {estatisticas["Média Gols Marcados HT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média de Gols Sofridos HT</span> = {estatisticas["Média Gols Sofridos HT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média HT</span> = {estatisticas["Média HT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média de Gols Marcados FT</span> = {estatisticas["Média Gols Marcados FT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média de Gols Sofridos FT</span> = {estatisticas["Média Gols Sofridos FT"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Média FT</span> = {estatisticas["Média FT"]}</div>',
+                            unsafe_allow_html=True)
+
+                        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+                        # Estatísticas dos Últimos 5 Jogos
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de Chutes no Gol a favor | Últimos 5 Jogos</span> = {estatisticas["Chutes no Gol (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de Chutes a favor | Últimos 5 Jogos</span> = {estatisticas["Chutes (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total Escanteios a Favor | Últimos 5 Jogos</span> = {estatisticas["Escanteios a Favor (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de Escanteios por jogo | Últimos 5 Jogos</span> = {estatisticas["Escanteios Total (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total Cartão Amarelo a Favor | Últimos 5 Jogos</span> = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de Cartão Amarelo por jogo | Últimos 5 Jogos</span> = {estatisticas["Cartões Amarelos (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de faltas a favor | Últimos 5 Jogos</span> = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="medium-text"><span class="highlight">Total de faltas por jogo | Últimos 5 Jogos</span> = {estatisticas["Faltas Total (Últimos 5)"]}</div>',
+                            unsafe_allow_html=True)
+
+                        # Análise de sequências e dicas
+                        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+                        st.markdown(
+                            '<div class="medium-text"><span class="highlight">💡 Análise de Sequências (Últimos 5 Jogos):</span></div>',
+                            unsafe_allow_html=True)
+
+                        dicas = analisar_sequencias(todos_jogos, time_nome)
+                        for dica in dicas:
+                            st.markdown(f'<div class="medium-text">{dica}</div>', unsafe_allow_html=True)
+
+                        # Alertas estatísticos
+                        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+                        st.markdown(
+                            '<div class="medium-text"><span class="highlight" style="color: #ff4b4b;">🚨 ALERTAS ESTATÍSTICOS (Últimos 5 Jogos):</span></div>',
+                            unsafe_allow_html=True)
+
+                        alertas = analisar_sequencias_estatisticas(todos_jogos, time_nome, estatisticas)
+                        for alerta in alertas:
+                            st.markdown(f'<div class="alert-text">{alerta}</div>', unsafe_allow_html=True)
+
+                        # Download das estatísticas
+                        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+                        df_estatisticas = pd.DataFrame([estatisticas])
+                        csv = df_estatisticas.to_csv(index=False, sep=';')
+
+                        st.download_button(
+                            label=f"📥 Download Estatísticas {time_nome}",
+                            data=csv,
+                            file_name=f"estatisticas_{time_nome}.csv",
+                            mime="text/csv",
+                            key=f"download_all_{time_nome}_{codigo_liga}"
+                        )
+                    else:
+                        st.warning(f"Não foi possível carregar estatísticas para {time_nome}")
+        else:
+            st.warning("⚠️ Nenhum dado disponível para busca de equipes")
+
     # Abas para cada liga histórica (restantes abas)
     for i, aba in enumerate(abas_disponiveis):
-        with tabs[i + 3]:  # +3 porque as três primeiras abas são Simulador, Relatórios e Times
+        # Ajuste o índice para começar após as 4 abas principais
+        with tabs[i + 4]:  # +4 porque as primeiras 4 abas são Simulador, Relatórios, Times e Buscar Equipe
             df_liga = todas_abas[aba]
             nome_liga = mapeamento_ligas.get(aba, f"{aba} (Liga)")
 
@@ -1187,17 +1463,26 @@ if todas_abas is not None and abas_disponiveis:
                 st.metric("Total de Jogos", len(df_liga))
 
             with col2:
-                total_gols = df_liga['FTHG'].sum() + df_liga['FTAG'].sum()
-                st.metric("Total de Gols", total_gols)
+                if 'FTHG' in df_liga.columns and 'FTAG' in df_liga.columns:
+                    total_gols = df_liga['FTHG'].sum() + df_liga['FTAG'].sum()
+                    st.metric("Total de Gols", total_gols)
+                else:
+                    st.metric("Total de Gols", "N/D")
 
             with col3:
-                media_gols = round(total_gols / len(df_liga), 2) if len(df_liga) > 0 else 0
-                st.metric("Média de Gols", media_gols)
+                if 'FTHG' in df_liga.columns and 'FTAG' in df_liga.columns and len(df_liga) > 0:
+                    media_gols = round(total_gols / len(df_liga), 2)
+                    st.metric("Média de Gols", media_gols)
+                else:
+                    st.metric("Média de Gols", "N/D")
 
             with col4:
-                vitorias_casa = len(df_liga[df_liga['FTR'] == 'H'])
-                percent_casa = round((vitorias_casa / len(df_liga)) * 100, 1) if len(df_liga) > 0 else 0
-                st.metric("Vitórias em Casa", f"{percent_casa}%")
+                if 'FTR' in df_liga.columns and len(df_liga) > 0:
+                    vitorias_casa = len(df_liga[df_liga['FTR'] == 'H'])
+                    percent_casa = round((vitorias_casa / len(df_liga)) * 100, 1)
+                    st.metric("Vitórias em Casa", f"{percent_casa}%")
+                else:
+                    st.metric("Vitórias em Casa", "N/D")
 
             # Download dos dados traduzidos
             st.subheader("💾 Exportar Dados")
@@ -1206,7 +1491,8 @@ if todas_abas is not None and abas_disponiveis:
                 label="📥 Download CSV",
                 data=csv,
                 file_name=f"dados_{aba}_traduzidos.csv",
-                mime="text/csv"
+                mime="text/csv",
+                key=f"download_{aba}"  # Chave única para cada botão
             )
 
 else:
