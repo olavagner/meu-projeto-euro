@@ -4,6 +4,7 @@ url_proximos_jogos = "https://www.football-data.co.uk/fixtures.xlsx"
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
@@ -14,24 +15,74 @@ import time
 # Configuração da página
 st.set_page_config(page_title="FutAlgorithm", page_icon="⚽", layout="wide")
 
-st.title("💀 FutAlgorithm - Futebol Europeu 2025-2026 ⚡️ ")
+# Configurações de estilo
+st.markdown("""
+    <style>
+    .main-header {
+        font-size: 2.5rem;
+        color: #1E88E5;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .sub-header {
+        font-size: 1.8rem;
+        color: #0D47A1;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .stProgress > div > div > div > div {
+        background-color: #1E88E5;
+    }
+    .stButton>button {
+        background-color: #1E88E5;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #0D47A1;
+        transform: scale(1.05);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Configuração do matplotlib para evitar avisos de muitas figuras abertas
+plt.rcParams['figure.max_open_warning'] = 50
+
+
+# Função para limpar figuras
+def limpar_figuras():
+    """Fecha todas as figuras matplotlib abertas"""
+    plt.close('all')
+
+
+# Função segura para criar gráficos
+def criar_grafico_seguro():
+    """Cria figura com tratamento de erro"""
+    try:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        return fig, ax
+    except Exception as e:
+        st.error(f"Erro ao criar figura: {e}")
+        return None, None
+
+
+st.markdown('<h1 class="main-header">💀 FutAlgorithm - Análise de Apostas Europeias 2025-2026 ⚡️</h1>',
+            unsafe_allow_html=True)
 st.markdown("---")
 
-# Adicionar controle de atualização
-st.sidebar.markdown("### ⚙️ Controle de Atualização")
-atualizar_automatico = st.sidebar.checkbox("Atualização Automática", value=True)
-intervalo_atualizacao = st.sidebar.slider("Intervalo (minutos)", 1, 60, 5)
-
-if atualizar_automatico:
-    st.sidebar.info(f"📡 Atualizando a cada {intervalo_atualizacao} minutos")
-    time.sleep(intervalo_atualizacao * 60)
-    st.rerun()
-
-# Botão para atualização manual
-if st.sidebar.button("🔄 Atualizar Agora"):
-    st.rerun()
 
 # Remover cache para garantir dados sempre atualizados
+@st.cache_data(ttl=3600)  # 1 hora de cache
 def carregar_dados_excel(url):
     try:
         response = requests.get(url)
@@ -39,12 +90,15 @@ def carregar_dados_excel(url):
         excel_file = BytesIO(response.content)
         todas_abas = pd.read_excel(excel_file, sheet_name=None)
         abas_disponiveis = list(todas_abas.keys())
-        st.success(f"✅ Arquivo carregado com sucesso! {len(abas_disponiveis)} ligas encontradas - {datetime.now().strftime('%H:%M:%S')}")
+        st.success(
+            f"✅ Arquivo carregado com sucesso! {len(abas_disponiveis)} ligas encontradas - {datetime.now().strftime('%H:%M:%S')}")
         return todas_abas, abas_disponiveis
     except Exception as e:
         st.error(f"❌ Erro ao carregar dados: {e}")
         return None, None
 
+
+@st.cache_data(ttl=1800)  # 30 minutos de cache
 def carregar_proximos_jogos(url):
     try:
         response = requests.get(url)
@@ -57,6 +111,7 @@ def carregar_proximos_jogos(url):
         st.error(f"❌ Erro ao carregar dados do simulador: {e}")
         return None
 
+
 # Carregar dados
 todas_abas, abas_disponiveis = carregar_dados_excel(url_excel)
 df_proximos_jogos = carregar_proximos_jogos(url_proximos_jogos)
@@ -64,13 +119,16 @@ df_proximos_jogos = carregar_proximos_jogos(url_proximos_jogos)
 # Exibir hora da última atualização
 st.sidebar.markdown(f"**Última atualização:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
 
-# Mapeamento completo com as 18 ligas principais
+# Mapeamento completo com as ligas principais
 mapeamento_ligas = {
-    'E0': 'Premier League (Inglaterra)', 'E1': 'Championship (Inglaterra)', 'E2': 'League One (Inglaterra)', 'E3': 'League Two (Inglaterra)',
-    'SC0': 'Premiership (Escócia)', 'SC1': 'Championship (Escócia)', 'SC2': 'League One (Escócia)', 'SC3': 'League Two (Escócia)',
+    'E0': 'Premier League (Inglaterra)', 'E1': 'Championship (Inglaterra)', 'E2': 'League One (Inglaterra)',
+    'E3': 'League Two (Inglaterra)',
+    'SC0': 'Premiership (Escócia)', 'SC1': 'Championship (Escócia)', 'SC2': 'League One (Escócia)',
+    'SC3': 'League Two (Escócia)',
     'D1': 'Bundesliga (Alemanha)', 'D2': '2. Bundesliga (Alemanha)', 'I1': 'Serie A (Itália)', 'I2': 'Serie B (Itália)',
     'SP1': 'La Liga (Espanha)', 'SP2': 'La Liga 2 (Espanha)', 'F1': 'Ligue 1 (França)', 'F2': 'Ligue 2 (França)',
-    'N1': 'Eredivisie (Holanda)', 'B1': 'Jupiler Pro League (Bélgica)', 'P1': 'Primeira Liga (Portugal)', 'T1': 'Super Lig (Turquia)', 'G1': 'Super League (Grécia)'
+    'N1': 'Eredivisie (Holanda)', 'B1': 'Jupiler Pro League (Bélgica)', 'P1': 'Primeira Liga (Portugal)',
+    'T1': 'Super Lig (Turquia)', 'G1': 'Super League (Grécia)'
 }
 
 # Verificação das ligas
@@ -91,6 +149,7 @@ traducao_colunas = {
     'B365D': 'B365 Empate', 'B365A': 'B365 Fora', 'B365>2.5': 'B365 Over 2.5', 'B365<2.5': 'B365 Under 2.5'
 }
 
+
 def traduzir_colunas_df(df):
     df_traduzido = df.copy()
     colunas_renomear = {}
@@ -100,13 +159,16 @@ def traduzir_colunas_df(df):
     df_traduzido = df_traduzido.rename(columns=colunas_renomear)
     return df_traduzido
 
+
 def calcular_probabilidades(odd):
     if pd.isna(odd) or odd <= 0:
         return 0
     return round((1 / odd) * 100, 1)
 
+
 def formatar_probabilidade(valor):
     return f"{valor}%"
+
 
 def calcular_relatorio_liga(df_liga, nome_liga):
     if df_liga.empty:
@@ -151,6 +213,7 @@ def calcular_relatorio_liga(df_liga, nome_liga):
         relatorio['Estatísticas']['BTTS FT'] = f"{(btts_ft / total_jogos) * 100:.1f}%"
 
     return relatorio
+
 
 def calcular_estatisticas_ultimos_5_jogos(df_liga, nome_time):
     jogos_mandante = df_liga[df_liga['HomeTeam'] == nome_time]
@@ -250,14 +313,45 @@ def calcular_estatisticas_ultimos_5_jogos(df_liga, nome_time):
         if gols_feitos_ft > 0 and gols_sofridos_ft > 0:
             estatisticas['btts'] += 1
 
-    estatisticas['media_gols_marcados_ht'] = estatisticas['gols_marcados_ht'] / estatisticas['jogos_analisados'] if estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_gols_sofridos_ht'] = estatisticas['gols_sofridos_ht'] / estatisticas['jogos_analisados'] if estatisticas['jogos_analisados'] > 0 else 0
+    estatisticas['media_gols_marcados_ht'] = estatisticas['gols_marcados_ht'] / estatisticas['jogos_analisados'] if \
+    estatisticas['jogos_analisados'] > 0 else 0
+    estatisticas['media_gols_sofridos_ht'] = estatisticas['gols_sofridos_ht'] / estatisticas['jogos_analisados'] if \
+    estatisticas['jogos_analisados'] > 0 else 0
     estatisticas['media_ht'] = estatisticas['media_gols_marcados_ht'] + estatisticas['media_gols_sofridos_ht']
-    estatisticas['media_gols_marcados_ft'] = estatisticas['gols_marcados_ft'] / estatisticas['jogos_analisados'] if estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_gols_sofridos_ft'] = estatisticas['gols_sofridos_ft'] / estatisticas['jogos_analisados'] if estatisticas['jogos_analisados'] > 0 else 0
+    estatisticas['media_gols_marcados_ft'] = estatisticas['gols_marcados_ft'] / estatisticas['jogos_analisados'] if \
+    estatisticas['jogos_analisados'] > 0 else 0
+    estatisticas['media_gols_sofridos_ft'] = estatisticas['gols_sofridos_ft'] / estatisticas['jogos_analisados'] if \
+    estatisticas['jogos_analisados'] > 0 else 0
     estatisticas['media_ft'] = estatisticas['media_gols_marcados_ft'] + estatisticas['media_gols_sofridos_ft']
 
+    # Adicionar mais estatísticas
+    estatisticas['media_chutes_gol'] = sum(estatisticas['chutes_gol']) / len(estatisticas['chutes_gol']) if \
+    estatisticas['chutes_gol'] else 0
+    estatisticas['media_chutes'] = sum(estatisticas['chutes']) / len(estatisticas['chutes']) if estatisticas[
+        'chutes'] else 0
+    estatisticas['media_escanteios_favor'] = sum(estatisticas['escanteios_favor']) / len(
+        estatisticas['escanteios_favor']) if estatisticas['escanteios_favor'] else 0
+    estatisticas['media_escanteios_contra'] = sum(estatisticas['escanteios_contra']) / len(
+        estatisticas['escanteios_contra']) if estatisticas['escanteios_contra'] else 0
+    estatisticas['media_amarelos_favor'] = sum(estatisticas['amarelos_favor']) / len(estatisticas['amarelos_favor']) if \
+    estatisticas['amarelos_favor'] else 0
+    estatisticas['media_amarelos_contra'] = sum(estatisticas['amarelos_contra']) / len(
+        estatisticas['amarelos_contra']) if estatisticas['amarelos_contra'] else 0
+    estatisticas['media_faltas_favor'] = sum(estatisticas['faltas_favor']) / len(estatisticas['faltas_favor']) if \
+    estatisticas['faltas_favor'] else 0
+    estatisticas['media_faltas_contra'] = sum(estatisticas['faltas_contra']) / len(estatisticas['faltas_contra']) if \
+    estatisticas['faltas_contra'] else 0
+
+    # Adicionar impedimentos se disponíveis
+    if estatisticas['impedimentos_favor']:
+        estatisticas['media_impedimentos_favor'] = sum(estatisticas['impedimentos_favor']) / len(
+            estatisticas['impedimentos_favor'])
+    if estatisticas['impedimentos_contra']:
+        estatisticas['media_impedimentos_contra'] = sum(estatisticas['impedimentos_contra']) / len(
+            estatisticas['impedimentos_contra'])
+
     return estatisticas
+
 
 def obter_cor_percentual(percentual):
     if percentual >= 80:
@@ -266,6 +360,7 @@ def obter_cor_percentual(percentual):
         return "🟡"
     else:
         return "🔴"
+
 
 def obter_probabilidade_historica_liga(codigo_liga, mercado):
     if codigo_liga in todas_abas:
@@ -279,6 +374,319 @@ def obter_probabilidade_historica_liga(codigo_liga, mercado):
                 return None
     return None
 
+
+def analisar_probabilidades_partida(df_liga, mandante, visitante):
+    """
+    Analisa as probabilidades para diversos mercados baseado nos últimos 5 jogos
+    de ambas as equipes e retorna dicas personalizadas
+    """
+    # Obter estatísticas dos últimos 5 jogos
+    stats_mandante = calcular_estatisticas_ultimos_5_jogos(df_liga, mandante)
+    stats_visitante = calcular_estatisticas_ultimos_5_jogos(df_liga, visitante)
+
+    if not stats_mandante or not stats_visitante:
+        return None
+
+    # Calcular probabilidades combinadas
+    probabilidades = {}
+    dicas = []
+
+    # Over 0.5 HT - Probabilidade de haver gols no primeiro tempo
+    prob_mandante_ht = stats_mandante['over_05_ht'] / stats_mandante['jogos_analisados']
+    prob_visitante_ht = stats_visitante['over_05_ht'] / stats_visitante['jogos_analisados']
+    prob_combinada_ht = (prob_mandante_ht + prob_visitante_ht) / 2
+    probabilidades['over_05_ht'] = prob_combinada_ht * 100
+
+    # Over 1.5 FT
+    prob_mandante_15 = stats_mandante['over_15_ft'] / stats_mandante['jogos_analisados']
+    prob_visitante_15 = stats_visitante['over_15_ft'] / stats_visitante['jogos_analisados']
+    prob_combinada_15 = (prob_mandante_15 + prob_visitante_15) / 2
+    probabilidades['over_15_ft'] = prob_combinada_15 * 100
+
+    # Over 2.5 FT
+    prob_mandante_25 = stats_mandante['over_25_ft'] / stats_mandante['jogos_analisados']
+    prob_visitante_25 = stats_visitante['over_25_ft'] / stats_visitante['jogos_analisados']
+    prob_combinada_25 = (prob_mandante_25 + prob_visitante_25) / 2
+    probabilidades['over_25_ft'] = prob_combinada_25 * 100
+
+    # BTTS (Both Teams To Score)
+    prob_mandante_btts = stats_mandante['btts'] / stats_mandante['jogos_analisados']
+    prob_visitante_btts = stats_visitante['btts'] / stats_visitante['jogos_analisados']
+    prob_combinada_btts = (prob_mandante_btts + prob_visitante_btts) / 2
+    probabilidades['btts'] = prob_combinada_btts * 100
+
+    # Médias de gols
+    media_gols_marcados = (stats_mandante['media_gols_marcados_ft'] + stats_visitante['media_gols_marcados_ft']) / 2
+    media_gols_sofridos = (stats_mandante['media_gols_sofridos_ft'] + stats_visitante['media_gols_sofridos_ft']) / 2
+    media_total_gols = media_gols_marcados + media_gols_sofridos
+
+    # Médias de escanteios
+    media_escanteios_mandante = stats_mandante['media_escanteios_favor']
+    media_escanteios_visitante = stats_visitante['media_escanteios_favor']
+    media_escanteios_total = (media_escanteios_mandante + media_escanteios_visitante) / 2
+
+    # Gerar dicas baseadas nas probabilidades
+    if probabilidades['over_05_ht'] >= 72:
+        dicas.append(f"⚽ ALTA PROBABILIDADE GOLS NO 1º TEMPO - Média: {probabilidades['over_05_ht']:.1f}%")
+
+    if probabilidades['btts'] >= 70:
+        dicas.append(f"🎯 ALTA PROBABILIDADE BTTS - Média: {probabilidades['btts']:.1f}%")
+
+    if probabilidades['over_15_ft'] >= 75:
+        dicas.append(f"🎯 ALTA PROBABILIDADE OVER 1.5 FT - Média: {probabilidades['over_15_ft']:.1f}%")
+
+    if probabilidades['over_25_ft'] >= 65:
+        dicas.append(f"🎯 ALTA PROBABILIDADE OVER 2.5 FT - Média: {probabilidades['over_25_ft']:.1f}%")
+
+    if media_gols_marcados >= 1.8:
+        dicas.append(f"🎯 ATAQUES POTENTES - Média de gols marcados: {media_gols_marcados:.1f}")
+
+    if media_gols_sofridos >= 1.6:
+        dicas.append(f"⚠️ DEFESAS VULNERÁVEIS - Média de gols sofridos: {media_gols_sofridos:.1f}")
+
+    if media_escanteios_total >= 7.5:
+        dicas.append(f"🎯 ALTO VOLUME DE ESCANTEIOS - Média: {media_escanteios_total:.1f} por jogo")
+
+    return {
+        'probabilidades': probabilidades,
+        'dicas': dicas,
+        'medias': {
+            'gols_marcados': media_gols_marcados,
+            'gols_sofridos': media_gols_sofridos,
+            'total_gols': media_total_gols,
+            'escanteios': media_escanteios_total
+        }
+    }
+
+
+def calcular_pontuacao_confiança(analise):
+    """
+    Calcula uma pontuação de confiança para las recomendações (0-100)
+    """
+    pontuacao = 0
+
+    # Fator 2: Consistência das estatísticas
+    if analise['probabilidades']['over_05_ht'] >= 75:
+        pontuacao += 15
+    elif analise['probabilidades']['over_05_ht'] >= 65:
+        pontuacao += 10
+
+    if analise['probabilidades']['over_15_ft'] >= 75:
+        pontuacao += 15
+    elif analise['probabilidades']['over_15_ft'] >= 65:
+        pontuacao += 10
+
+    if analise['probabilidades']['over_25_ft'] >= 65:
+        pontuacao += 15
+    elif analise['probabilidades']['over_25_ft'] >= 55:
+        pontuacao += 10
+
+    if analise['probabilidades']['btts'] >= 70:
+        pontuacao += 15
+    elif analise['probabilidades']['btts'] >= 60:
+        pontuacao += 10
+
+    # Fator 3: Médias de gols
+    if analise['medias']['total_gols'] >= 2.8:
+        pontuacao += 20
+    elif analise['medias']['total_gols'] >= 2.3:
+        pontuacao += 15
+    elif analise['medias']['total_gols'] >= 1.8:
+        pontuacao += 10
+
+    # Limitar a 100
+    return min(pontuacao, 100)
+
+
+def simular_desempenho_mercados():
+    """
+    Simula o desempenho esperado para cada mercado com base nas taxas de acerto
+    """
+    mercados = [
+        {
+            'mercado': 'Over 0.5 HT',
+            'taxa_min': 72,
+            'taxa_max': 78,
+            'dificuldade': '🟢 Fácil',
+            'odds_min': 1.10,
+            'odds_max': 1.30,
+            'estrategia': 'Apostar em sequências consistentes'
+        },
+        {
+            'mercado': 'Over 0.5 FT',
+            'taxa_min': 85,
+            'taxa_max': 92,
+            'dificuldade': '🟢 Fácil',
+            'odds_min': 1.01,
+            'odds_max': 1.10,
+            'estrategia': 'Quase garantido, pouco valor'
+        },
+        {
+            'mercado': 'Over 1.5 FT',
+            'taxa_min': 70,
+            'taxa_max': 76,
+            'dificuldade': '🟢 Fácil',
+            'odds_min': 1.30,
+            'odds_max': 1.60,
+            'estrategia': 'Melhor custo-benefício'
+        },
+        {
+            'mercado': 'Over 2.5 FT',
+            'taxa_min': 62,
+            'taxa_max': 68,
+            'dificuldade': '🟡 Médio',
+            'odds_min': 1.70,
+            'odds_max': 2.10,
+            'estrategia': 'Buscar +5% de valor'
+        },
+        {
+            'mercado': 'Under 2.5 FT',
+            'taxa_min': 58,
+            'taxa_max': 65,
+            'dificuldade': '🟡 Médio',
+            'odds_min': 1.80,
+            'odds_max': 2.20,
+            'estrategia': 'Análise defensiva detalhada'
+        },
+        {
+            'mercado': 'BTTS',
+            'taxa_min': 63,
+            'taxa_max': 70,
+            'dificuldade': '🟡 Médio',
+            'odds_min': 1.80,
+            'odds_max': 2.20,
+            'estrategia': 'Cruzar dados ofensivos/defensivos'
+        },
+        {
+            'mercado': 'Dupla Chance',
+            'taxa_min': 60,
+            'taxa_max': 66,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 1.40,
+            'odds_max': 1.70,
+            'estrategia': 'Usar em jogos equilibrados'
+        },
+        {
+            'mercado': 'Escanteios',
+            'taxa_min': 68,
+            'taxa_max': 74,
+            'dificuldade': '🟢 Fácil',
+            'odds_min': 1.60,
+            'odds_max': 1.90,
+            'estrategia': 'Times ofensivos com estatísticas consistentes'
+        },
+        {
+            'mercado': 'Cartões',
+            'taxa_min': 65,
+            'taxa_max': 72,
+            'dificuldade': '🟡 Médio',
+            'odds_min': 1.70,
+            'odds_max': 2.00,
+            'estrategia': 'Análise de arbitragem e rivalidade'
+        },
+        {
+            'mercado': 'Handicap',
+            'taxa_min': 58,
+            'taxa_max': 64,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 1.90,
+            'odds_max': 2.50,
+            'estrategia': 'Diferença clara de força entre equipes'
+        },
+        {
+            'mercado': 'Chutes',
+            'taxa_min': 66,
+            'taxa_max': 73,
+            'dificuldade': '🟡 Médio',
+            'odds_min': 1.75,
+            'odds_max': 2.10,
+            'estrategia': 'Times com volume ofensivo alto'
+        },
+        {
+            'mercado': 'Impedimentos',
+            'taxa_min': 59,
+            'taxa_max': 66,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 1.80,
+            'odds_max': 2.30,
+            'estrategia': 'Equipes com linha avançada agressiva'
+        },
+        {
+            'mercado': 'Vitória',
+            'taxa_min': 55,
+            'taxa_max': 62,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 1.80,
+            'odds_max': 3.50,
+            'estrategia': 'Aposta de maior risco'
+        },
+        {
+            'mercado': 'Empate',
+            'taxa_min': 28,
+            'taxa_max': 35,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 3.00,
+            'odds_max': 4.00,
+            'estrategia': 'Apenas em jogos muito equilibrados'
+        },
+        {
+            'mercado': 'Derrota',
+            'taxa_min': 55,
+            'taxa_max': 62,
+            'dificuldade': '🔴 Difícil',
+            'odds_min': 1.80,
+            'odds_max': 3.50,
+            'estrategia': 'Equivalente à vitória, análise similar'
+        }
+    ]
+
+    return pd.DataFrame(mercados)
+
+
+def simular_resultados_financeiros(num_jogos=100, valor_aposta=100):
+    """
+    Simula os resultados financeiros com base nas taxas de acerto esperadas
+    """
+    # Obter dados de desempenho dos mercados
+    df_mercados = simular_desempenho_mercados()
+
+    resultados = []
+
+    for _, mercado in df_mercados.iterrows():
+        # Calcular taxa média de acerto
+        taxa_media = (mercado['taxa_min'] + mercado['taxa_max']) / 2 / 100
+
+        # Calcular odd média
+        odd_media = (mercado['odds_min'] + mercado['odds_max']) / 2
+
+        # Simular jogos
+        acertos = int(num_jogos * taxa_media)
+        erros = num_jogos - acertos
+
+        # Calcular lucro/prejuízo
+        lucro = acertos * (valor_aposta * (odd_media - 1))
+        prejuizo = erros * valor_aposta
+        resultado_financeiro = lucro - prejuizo
+        roi = (resultado_financeiro / (num_jogos * valor_aposta)) * 100
+
+        # Calcular unidades (1 unidade = valor_aposta)
+        unidades = resultado_financeiro / valor_aposta
+
+        resultados.append({
+            'Mercado': mercado['mercado'],
+            'Taxa Acerto': f"{taxa_media * 100:.1f}%",
+            'Odd Média': f"{odd_media:.2f}",
+            'Acertos': acertos,
+            'Erros': erros,
+            'Lucro (R$)': f"R$ {resultado_financeiro:.2f}",
+            'ROI': f"{roi:.1f}%",
+            'Unidades': f"{unidades:.1f}u",
+            'Dificuldade': mercado['dificuldade']
+        })
+
+    return pd.DataFrame(resultados)
+
+
 # Criar abas principais
 if todas_abas is not None and abas_disponiveis:
     nomes_abas = ["🎯 Simulador", "📊 Relatórios Liga", "👥 Análise por Time", "🔍 Buscar Equipe"]
@@ -287,10 +695,18 @@ if todas_abas is not None and abas_disponiveis:
 
     # ABA 1: SIMULADOR
     with tabs[0]:
-        st.header("🏆 Atualização dos jogos até 24h antes de cada rodada.")
+        st.header("🏆 Simulador de Apostas - Análise de Probabilidades")
+
+        # Botão de atualização simplificado e mais bonito
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("🔄 ATUALIZAR DADOS AGORA", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
 
         if df_proximos_jogos is not None and not df_proximos_jogos.empty:
-            colunas_desejadas = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
+            colunas_desejadas = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365>2.5',
+                                 'B365<2.5']
             colunas_existentes = [col for col in colunas_desejadas if col in df_proximos_jogos.columns]
             df_simulador = df_proximos_jogos[colunas_existentes].copy()
 
@@ -298,7 +714,8 @@ if todas_abas is not None and abas_disponiveis:
                 df_simulador['Date'] = pd.to_datetime(df_simulador['Date'], errors='coerce')
                 df_simulador['Date'] = df_simulador['Date'].dt.strftime('%d/%m/%Y')
 
-            df_simulador = df_simulador.rename(columns={'Div': 'Liga', 'Date': 'Data', 'HomeTeam': 'Mandante', 'AwayTeam': 'Visitante'})
+            df_simulador = df_simulador.rename(
+                columns={'Div': 'Liga', 'Date': 'Data', 'HomeTeam': 'Mandante', 'AwayTeam': 'Visitante'})
             df_simulador['Liga'] = df_simulador['Liga'].map(mapeamento_ligas).fillna(df_simulador['Liga'])
 
             if 'B365H' in df_simulador.columns:
@@ -330,7 +747,8 @@ if todas_abas is not None and abas_disponiveis:
             df_simulador = df_simulador[colunas_ordenadas]
 
             if 'Data' in df_simulador.columns:
-                df_simulador['Data_Ordenacao'] = pd.to_datetime(df_simulador['Data'], format='%d/%m/%Y', errors='coerce')
+                df_simulador['Data_Ordenacao'] = pd.to_datetime(df_simulador['Data'], format='%d/%m/%Y',
+                                                                errors='coerce')
                 df_simulador = df_simulador.sort_values('Data_Ordenacao')
                 df_simulador = df_simulador.drop('Data_Ordenacao', axis=1)
 
@@ -352,7 +770,7 @@ if todas_abas is not None and abas_disponiveis:
             if 'Data' in df_filtrado.columns and 'data_filtro' in locals() and data_filtro != "Todas as Datas":
                 df_filtrado = df_filtrado[df_filtrado['Data'] == data_filtro]
 
-            # Exibir jogos
+            # Exibir jogos com probabilidades visíveis
             st.subheader("⚡️ Jogos da Rodada ⚡️ ")
             st.info(f"📊 **{len(df_filtrado)} jogos encontrados**")
 
@@ -363,42 +781,26 @@ if todas_abas is not None and abas_disponiveis:
                         codigo_liga = codigo
                         break
 
-                with st.expander(f"🏟️ {jogo['Mandante']} vs {jogo['Visitante']} - {jogo['Liga']} - {jogo['Data']}"):
-                    col1, col2, col3 = st.columns([1, 1, 1])
+                # Extrair valores numéricos das probabilidades para exibição rápida
+                vitoria_valor = float(jogo.get('Vitória', '0%').replace('%', '')) if 'Vitória' in jogo and pd.notna(
+                    jogo['Vitória']) else 0
+                empate_valor = float(jogo.get('Empate', '0%').replace('%', '')) if 'Empate' in jogo and pd.notna(
+                    jogo['Empate']) else 0
+                derrota_valor = float(jogo.get('Derrota', '0%').replace('%', '')) if 'Derrota' in jogo and pd.notna(
+                    jogo['Derrota']) else 0
+                over_valor = float(
+                    jogo.get('Over 2.5 FT', '0%').replace('%', '')) if 'Over 2.5 FT' in jogo and pd.notna(
+                    jogo['Over 2.5 FT']) else 0
+                under_valor = float(
+                    jogo.get('Under 2.5 FT', '0%').replace('%', '')) if 'Under 2.5 FT' in jogo and pd.notna(
+                    jogo['Under 2.5 FT']) else 0
 
-                    with col1:
-                        st.subheader("📊 Odds e Probabilidades")
-                        st.metric("Vitória", jogo.get('Vitória', 'N/D'))
-                        st.metric("Empate", jogo.get('Empate', 'N/D'))
-                        st.metric("Derrota", jogo.get('Derrota', 'N/D'))
-                        st.metric("Over 2.5 FT", jogo.get('Over 2.5 FT', 'N/D'))
-                        st.metric("Under 2.5 FT", jogo.get('Under 2.5 FT', 'N/D'))
+                # Criar título com todas as probabilidades visíveis
+                titulo_jogo = f"🏟️ {jogo['Mandante']} vs {jogo['Visitante']} - {jogo['Liga']} - {jogo['Data']}"
+                titulo_probabilidades = f"   ✅ {vitoria_valor:.0f}% | 🟰 {empate_valor:.0f}% | ❌ {derrota_valor:.0f}% | ⚽ Over {over_valor:.0f}% | 🛡️ Under {under_valor:.0f}%"
 
-                    with col2:
-                        st.subheader("🎯 Sugestão do Sistema")
-                        if codigo_liga:
-                            prob_historica_over = obter_probabilidade_historica_liga(codigo_liga, "Over 2.5 FT")
-                            if prob_historica_over is not None and 'Over 2.5 FT' in jogo and pd.notna(jogo['Over 2.5 FT']):
-                                prob_odd_over = float(jogo['Over 2.5 FT'].replace('%', ''))
-                                if prob_odd_over >= prob_historica_over:
-                                    st.success(f"✅ OVER 2.5 (Odd: {prob_odd_over}% ≥ Histórico: {prob_historica_over}%)")
-                                else:
-                                    st.error(f"❌ UNDER 2.5 (Odd: {prob_odd_over}% < Histórico: {prob_historica_over}%)")
-                            else:
-                                st.info("ℹ️ Dados insuficientes para sugestão")
-                        else:
-                            st.info("ℹ️ Liga não encontrada para análise")
-
-                    with col3:
-                        st.subheader("📈 Estatísticas da Liga")
-                        if codigo_liga and codigo_liga in todas_abas:
-                            relatorio = calcular_relatorio_liga(todas_abas[codigo_liga], jogo['Liga'])
-                            if relatorio:
-                                st.write(f"**Over 2.5 FT:** {relatorio['Estatísticas'].get('Over 2.5 FT', 'N/D')}")
-                                st.write(f"**BTTS FT:** {relatorio['Estatísticas'].get('BTTS FT', 'N/D')}")
-                                st.write(f"**Média de Gols:** {relatorio['Estatísticas'].get('Gols FT por Jogo', 'N/D')}")
-
-                    # Comparação detalhada
+                with st.expander(f"{titulo_jogo}{titulo_probabilidades}"):
+                    # Manter apenas a comparação detalhada dentro do expander
                     st.markdown("---")
                     st.subheader("📊 Comparação dos Últimos 5 Jogos")
 
@@ -428,20 +830,30 @@ if todas_abas is not None and abas_disponiveis:
                             ]
 
                             for nome, mandante_val, visitante_val in percentuais:
-                                percent_mandante = (mandante_val / stats_mandante['jogos_analisados'] * 100) if stats_mandante['jogos_analisados'] > 0 else 0
-                                percent_visitante = (visitante_val / stats_visitante['jogos_analisados'] * 100) if stats_visitante['jogos_analisados'] > 0 else 0
+                                percent_mandante = (mandante_val / stats_mandante['jogos_analisados'] * 100) if \
+                                stats_mandante['jogos_analisados'] > 0 else 0
+                                percent_visitante = (visitante_val / stats_visitante['jogos_analisados'] * 100) if \
+                                stats_visitante['jogos_analisados'] > 0 else 0
 
-                                dados_mandante[nome] = f"{obter_cor_percentual(percent_mandante)} {mandante_val}/{stats_mandante['jogos_analisados']} ({percent_mandante:.0f}%)"
-                                dados_visitante[nome] = f"{obter_cor_percentual(percent_visitante)} {visitante_val}/{stats_visitante['jogos_analisados']} ({percent_visitante:.0f}%)"
+                                dados_mandante[
+                                    nome] = f"{obter_cor_percentual(percent_mandante)} {mandante_val}/{stats_mandante['jogos_analisados']} ({percent_mandante:.0f}%)"
+                                dados_visitante[
+                                    nome] = f"{obter_cor_percentual(percent_visitante)} {visitante_val}/{stats_visitante['jogos_analisados']} ({percent_visitante:.0f}%)"
 
                             # Médias de gols
                             medias = [
-                                ('Média de Gols Marcados HT', stats_mandante['media_gols_marcados_ht'], stats_visitante['media_gols_marcados_ht']),
-                                ('Média de Gols Sofridos HT', stats_mandante['media_gols_sofridos_ht'], stats_visitante['media_gols_sofridos_ht']),
-                                ('Média Total HT (Marcados + Sofridos)', stats_mandante['media_ht'], stats_visitante['media_ht']),
-                                ('Média de Gols Marcados FT', stats_mandante['media_gols_marcados_ft'], stats_visitante['media_gols_marcados_ft']),
-                                ('Média de Gols Sofridos FT', stats_mandante['media_gols_sofridos_ft'], stats_visitante['media_gols_sofridos_ft']),
-                                ('Média Total FT (Marcados + Sofridos)', stats_mandante['media_ft'], stats_visitante['media_ft'])
+                                ('Média de Gols Marcados HT', stats_mandante['media_gols_marcados_ht'],
+                                 stats_visitante['media_gols_marcados_ht']),
+                                ('Média de Gols Sofridos HT', stats_mandante['media_gols_sofridos_ht'],
+                                 stats_visitante['media_gols_sofridos_ht']),
+                                ('Média Total HT (Marcados + Sofridos)', stats_mandante['media_ht'],
+                                 stats_visitante['media_ht']),
+                                ('Média de Gols Marcados FT', stats_mandante['media_gols_marcados_ft'],
+                                 stats_visitante['media_gols_marcados_ft']),
+                                ('Média de Gols Sofridos FT', stats_mandante['media_gols_sofridos_ft'],
+                                 stats_visitante['media_gols_sofridos_ft']),
+                                ('Média Total FT (Marcados + Sofridos)', stats_mandante['media_ft'],
+                                 stats_visitante['media_ft'])
                             ]
 
                             for nome, mandante_val, visitante_val in medias:
@@ -450,20 +862,29 @@ if todas_abas is not None and abas_disponiveis:
 
                             # Sequências
                             sequencias = [
-                                ('Chutes no Gol (últimos 5)', stats_mandante['chutes_gol'], stats_visitante['chutes_gol']),
+                                ('Chutes no Gol (últimos 5)', stats_mandante['chutes_gol'],
+                                 stats_visitante['chutes_gol']),
                                 ('Chutes Totais (últimos 5)', stats_mandante['chutes'], stats_visitante['chutes']),
-                                ('Escanteios a favor (últimos 5)', stats_mandante['escanteios_favor'], stats_visitante['escanteios_favor']),
-                                ('Escanteios por jogo (total)',
-                                 [a+b for a, b in zip(stats_mandante['escanteios_favor'], stats_mandante['escanteios_contra'])],
-                                 [a+b for a, b in zip(stats_visitante['escanteios_favor'], stats_visitante['escanteios_contra'])]),
-                                ('Cartões amarelos a favor (últimos 5)', stats_mandante['amarelos_favor'], stats_visitante['amarelos_favor']),
-                                ('Cartões amarelos por jogo (total)',
-                                 [a+b for a, b in zip(stats_mandante['amarelos_favor'], stats_mandante['amarelos_contra'])],
-                                 [a+b for a, b in zip(stats_visitante['amarelos_favor'], stats_visitante['amarelos_contra'])]),
-                                ('Faltas a favor (últimos 5)', stats_mandante['faltas_favor'], stats_visitante['faltas_favor']),
-                                ('Faltas por jogo (total)',
-                                 [a+b for a, b in zip(stats_mandante['faltas_favor'], stats_mandante['faltas_contra'])],
-                                 [a+b for a, b in zip(stats_visitante['faltas_favor'], stats_visitante['faltas_contra'])])
+                                ('Escanteios a favor (últimos 5)', stats_mandante['escanteios_favor'],
+                                 stats_visitante['escanteios_favor']),
+                                ('Escanteios por jogo (total)', [a + b for a, b in
+                                                                 zip(stats_mandante['escanteios_favor'],
+                                                                     stats_mandante['escanteios_contra'])],
+                                 [a + b for a, b in
+                                  zip(stats_visitante['escanteios_favor'], stats_visitante['escanteios_contra'])]),
+                                ('Cartões amarelos a favor (últimos 5)', stats_mandante['amarelos_favor'],
+                                 stats_visitante['amarelos_favor']),
+                                ('Cartões amarelos por jogo (total)', [a + b for a, b in
+                                                                       zip(stats_mandante['amarelos_favor'],
+                                                                           stats_mandante['amarelos_contra'])],
+                                 [a + b for a, b in
+                                  zip(stats_visitante['amarelos_favor'], stats_visitante['amarelos_contra'])]),
+                                ('Faltas a favor (últimos 5)', stats_mandante['faltas_favor'],
+                                 stats_visitante['faltas_favor']),
+                                ('Faltas por jogo (total)', [a + b for a, b in zip(stats_mandante['faltas_favor'],
+                                                                                   stats_mandante['faltas_contra'])],
+                                 [a + b for a, b in
+                                  zip(stats_visitante['faltas_favor'], stats_visitante['faltas_contra'])])
                             ]
 
                             for nome, mandante_seq, visitante_seq in sequencias:
@@ -472,11 +893,21 @@ if todas_abas is not None and abas_disponiveis:
 
                             # Impedimentos (se disponíveis)
                             if stats_mandante['impedimentos_favor'] and stats_visitante['impedimentos_favor']:
-                                dados_mandante['Impedimentos a favor (últimos 5)'] = ' - '.join(map(str, stats_mandante['impedimentos_favor']))
-                                dados_visitante['Impedimentos a favor (últimos 5)'] = ' - '.join(map(str, stats_visitante['impedimentos_favor']))
+                                dados_mandante['Impedimentos a favor (últimos 5)'] = ' - '.join(
+                                    map(str, stats_mandante['impedimentos_favor']))
+                                dados_visitante['Impedimentos a favor (últimos 5)'] = ' - '.join(
+                                    map(str, stats_visitante['impedimentos_favor']))
 
-                                dados_mandante['Impedimentos por jogo (total)'] = ' - '.join([str(a+b) for a, b in zip(stats_mandante['impedimentos_favor'], stats_mandante['impedimentos_contra'])])
-                                dados_visitante['Impedimentos por jogo (total)'] = ' - '.join([str(a+b) for a, b in zip(stats_visitante['impedimentos_favor'], stats_visitante['impedimentos_contra'])])
+                                dados_mandante['Impedimentos por jogo (total)'] = ' - '.join([str(a + b) for a, b in
+                                                                                              zip(stats_mandante[
+                                                                                                      'impedimentos_favor'],
+                                                                                                  stats_mandante[
+                                                                                                      'impedimentos_contra'])])
+                                dados_visitante['Impedimentos por jogo (total)'] = ' - '.join([str(a + b) for a, b in
+                                                                                               zip(stats_visitante[
+                                                                                                       'impedimentos_favor'],
+                                                                                                   stats_visitante[
+                                                                                                       'impedimentos_contra'])])
 
                             # Criar tabela comparativa
                             categorias = list(dados_mandante.keys())
@@ -498,13 +929,101 @@ if todas_abas is not None and abas_disponiveis:
                                 }
                             )
 
-                            # Legenda
-                            st.caption("🎯 **Legenda:** 🟢 ≥80% | 🟡 60-79% | 🔴 <60%")
+                            # Análise de probabilidades e dicas
+                            analise = analisar_probabilidades_partida(df_liga, jogo['Mandante'], jogo['Visitante'])
+
+                            if analise:
+                                pontuacao = calcular_pontuacao_confiança(analise)
+
+                                # Exibir pontuação de confiança
+                                st.subheader("📈 NÍVEL DE CONFIANÇA DAS RECOMENDAÇÕES")
+
+                                if pontuacao >= 80:
+                                    st.success(f"🎯 CONFIANÇA ALTA: {pontuacao}%")
+                                elif pontuacao >= 60:
+                                    st.warning(f"⚠️ CONFIANÇA MÉDIA: {pontuacao}%")
+                                else:
+                                    st.error(f"🔴 CONFIANÇA BAIXA: {pontuacao}%")
+
+                                # Barra de progresso para confiança
+                                st.progress(pontuacao / 100)
+
+                                st.subheader("🎯 DICAS INTELIGENTES PARA ESTA PARTIDA")
+
+                                # Exibir dicas
+                                for dica in analise['dicas']:
+                                    st.success(dica)
+
+                                # Exibir probabilidades em cards
+                                st.subheader("📊 PROBABILIDADES COMBINADAS")
+
+                                col1, col2, col3, col4 = st.columns(4)
+
+                                with col1:
+                                    st.metric("Over 0.5 HT", f"{analise['probabilidades']['over_05_ht']:.1f}%")
+                                with col2:
+                                    st.metric("Over 1.5 FT", f"{analise['probabilidades']['over_15_ft']:.1f}%")
+                                with col3:
+                                    st.metric("Over 2.5 FT", f"{analise['probabilidades']['over_25_ft']:.1f}%")
+                                with col4:
+                                    st.metric("BTTS", f"{analise['probabilidades']['btts']:.1f}%")
+
+                                # Exibir médias
+                                st.subheader("⚖️ MÉDIAS COMBINADAS")
+
+                                col1, col2, col3, col4 = st.columns(4)
+
+                                with col1:
+                                    st.metric("Gols Marcados", f"{analise['medias']['gols_marcados']:.2f}")
+                                with col2:
+                                    st.metric("Gols Sofridos", f"{analise['medias']['gols_sofridos']:.2f}")
+                                with col3:
+                                    st.metric("Total de Gols", f"{analise['medias']['total_gols']:.2f}")
+                                with col4:
+                                    st.metric("Escanteios", f"{analise['medias']['escanteios']:.2f}")
+
+                            # Adicionar uma nova seção para simulação de resultados
+                            with st.expander("📈 SIMULAÇÃO DE DESEMPENHO POR MERCADO"):
+                                st.subheader("🎯 TAXAS DE ACERTO POR MERCADO")
+
+                                df_mercados = simular_desempenho_mercados()
+                                st.dataframe(df_mercados, use_container_width=True, hide_index=True)
+
+                                st.subheader("💰 SIMULAÇÃO FINANCEIRA (100 jogos, R$ 100 por aposta)")
+
+                                df_resultados = simular_resultados_financeiros(100, 100)
+                                st.dataframe(df_resultados, use_container_width=True, hide_index=True)
+
+                                # Gráfico de ROI por mercado (com tratamento de erro)
+                                limpar_figuras()  # Limpar figuras antes de criar novas
+                                fig, ax = criar_grafico_seguro()
+
+                                if fig and ax:
+                                    try:
+                                        rois = [float(r['ROI'].replace('%', '')) for _, r in df_resultados.iterrows()]
+                                        mercados = df_resultados['Mercado']
+
+                                        bars = ax.barh(mercados, rois,
+                                                       color=['green' if roi >= 0 else 'red' for roi in rois])
+                                        ax.set_xlabel('ROI (%)')
+                                        ax.set_title('Retorno sobre Investimento por Mercado')
+
+                                        for i, bar in enumerate(bars):
+                                            width = bar.get_width()
+                                            ax.text(width + (0.5 if width >= 0 else -1.5),
+                                                    bar.get_y() + bar.get_height() / 2,
+                                                    f'{rois[i]:.1f}%', ha='left' if width >= 0 else 'right',
+                                                    va='center')
+
+                                        st.pyplot(fig)
+                                    except Exception as e:
+                                        st.error(f"Erro ao criar gráfico: {e}")
+                                    finally:
+                                        plt.close(fig)  # Garantir que a figura seja fechada
                         else:
                             st.warning("Dados insuficientes para análise detalhada")
                     else:
                         st.warning("Dados da liga não disponíveis para análise")
-
             # Estatísticas e download
             st.subheader("📊 Estatísticas")
             col1, col2, col3, col4, col5 = st.columns(5)
@@ -529,11 +1048,9 @@ if todas_abas is not None and abas_disponiveis:
         else:
             st.warning("⚠️ Não há dados disponíveis para simulação")
 
-    # [Mantenha as outras abas aqui...]
-
 else:
     st.error("❌ Não foi possível carregar os dados")
 
 # Rodapé
 st.markdown("---")
-st.caption("Dados obtidos de football-data.co.uk | Simulador desenvolvido com Streamlit")
+st.caption("Dados obtidos de football-data.co.uk | Sistema desenvolvido com Streamlit | FutAlgorithm ⚽")
