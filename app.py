@@ -792,141 +792,6 @@ def analisar_impedimentos_melhorado(jogos, time):
     return dicas
 
 
-# FUNÇÕES PARA FILTROS EM TODAS AS COLUNAS
-def criar_filtros_para_todas_colunas(df):
-    """Cria filtros para TODAS as colunas da tabela"""
-
-    st.sidebar.header("🔍 Filtros Avançados - Todas as Colunas")
-
-    df_filtrado = df.copy()
-
-    # Criar abas para organizar os filtros
-    tab1, tab2, tab3 = st.sidebar.tabs(["📋 Informações Básicas", "⚽ Resultados & Gols", "📊 Estatísticas Avançadas"])
-
-    with tab1:
-        st.markdown('<div class="filtro-header">Informações Básicas</div>', unsafe_allow_html=True)
-
-        # Filtro Data
-        if 'Data' in df.columns:
-            datas = sorted(df['Data'].unique())
-            selected_datas = st.multiselect(
-                "Data:",
-                options=datas,
-                default=datas,
-                help="Filtrar por data dos jogos"
-            )
-            df_filtrado = df_filtrado[df_filtrado['Data'].isin(selected_datas)]
-
-        # Filtro Liga
-        if 'Liga' in df.columns:
-            ligas = sorted(df['Liga'].unique())
-            selected_ligas = st.multiselect(
-                "Liga:",
-                options=ligas,
-                default=ligas,
-                help="Filtrar por liga"
-            )
-            df_filtrado = df_filtrado[df_filtrado['Liga'].isin(selected_ligas)]
-
-        # Filtro Time Casa
-        if 'Casa' in df.columns:
-            times_casa = sorted(df['Casa'].unique())
-            selected_times_casa = st.multiselect(
-                "Time da Casa:",
-                options=times_casa,
-                default=times_casa,
-                help="Filtrar por time mandante"
-            )
-            df_filtrado = df_filtrado[df_filtrado['Casa'].isin(selected_times_casa)]
-
-        # Filtro Time Fora
-        if 'Fora' in df.columns:
-            times_fora = sorted(df['Fora'].unique())
-            selected_times_fora = st.multiselect(
-                "Time Visitante:",
-                options=times_fora,
-                default=times_fora,
-                help="Filtrar por time visitante"
-            )
-            df_filtrado = df_filtrado[df_filtrado['Fora'].isin(selected_times_fora)]
-
-    with tab2:
-        st.markdown('<div class="filtro-header">Resultados & Gols</div>', unsafe_allow_html=True)
-
-        # Filtros para probabilidades
-        colunas_probabilidades = ['Casa Vence', 'Empate', 'Fora Vence', 'Over 0.5 HT', 'Over 0.5 FT',
-                                  'Over 1.5 FT', 'Over 2.5 FT', 'Over 3.5 FT', 'BTTS FT']
-
-        for coluna in colunas_probabilidades:
-            if coluna in df.columns:
-                # Converter para numérico
-                df_filtrado[f'{coluna}_num'] = df_filtrado[coluna].str.replace('%', '').astype(float)
-
-                min_val, max_val = st.slider(
-                    f"{coluna}:",
-                    min_value=0.0,
-                    max_value=100.0,
-                    value=(0.0, 100.0),
-                    step=1.0,
-                    help=f"Filtrar por {coluna}"
-                )
-                df_filtrado = df_filtrado[
-                    (df_filtrado[f'{coluna}_num'] >= min_val) &
-                    (df_filtrado[f'{coluna}_num'] <= max_val)
-                    ]
-
-        # Filtros para gols
-        colunas_gols = ['Gols HT', 'Gols FT', 'Gols Casa Esp', 'Gols Fora Esp']
-
-        for coluna in colunas_gols:
-            if coluna in df.columns:
-                min_val, max_val = st.slider(
-                    f"{coluna}:",
-                    min_value=0.0,
-                    max_value=10.0,
-                    value=(0.0, 10.0),
-                    step=0.1,
-                    help=f"Filtrar por {coluna}"
-                )
-                df_filtrado = df_filtrado[
-                    (df_filtrado[coluna].astype(float) >= min_val) &
-                    (df_filtrado[coluna].astype(float) <= max_val)
-                    ]
-
-    with tab3:
-        st.markdown('<div class="filtro-header">Estatísticas Avançadas</div>', unsafe_allow_html=True)
-
-        # Filtros para estatísticas avançadas
-        colunas_estatisticas = [
-            'Escanteios Casa Esp', 'Escanteios Fora Esp', 'Escanteios FT',
-            'Finalizações Casa Esp', 'Finalizações Fora Esp', 'Finalizações FT',
-            'Chutes Gol Casa Esp', 'Chutes Gol Fora Esp', 'Chutes Gol FT',
-            'Cartões Casa Esp', 'Cartões Fora Esp', 'Cartões FT'
-        ]
-
-        for coluna in colunas_estatisticas:
-            if coluna in df.columns and coluna != 'Impedimentos FT':  # Excluir impedimentos que pode ter "N/D"
-                min_val, max_val = st.slider(
-                    f"{coluna}:",
-                    min_value=0.0,
-                    max_value=20.0,
-                    value=(0.0, 20.0),
-                    step=0.5,
-                    help=f"Filtrar por {coluna}"
-                )
-                df_filtrado = df_filtrado[
-                    (df_filtrado[coluna].astype(float) >= min_val) &
-                    (df_filtrado[coluna].astype(float) <= max_val)
-                    ]
-
-    # Remover colunas numéricas temporárias
-    for coluna in df.columns:
-        if f'{coluna}_num' in df_filtrado.columns:
-            df_filtrado = df_filtrado.drop(f'{coluna}_num', axis=1)
-
-    return df_filtrado
-
-
 # Interface principal
 st.markdown('<h1 class="main-header">💀 FutAlgorithm - Software Esportivo</h1>', unsafe_allow_html=True)
 st.markdown('<p class="citacao">⚰️ In Memoriam – Denise Bet365..</p>', unsafe_allow_html=True)
@@ -947,11 +812,11 @@ with tabs[0]:
         if not df_resultados.empty:
             st.success(f"⭐️ Busca Concluída! {len(df_resultados)} Jogos Encontrados")
 
-            # Aplicar filtros em TODAS as colunas
-            df_filtrado = criar_filtros_para_todas_colunas(df_resultados)
+            # REMOVIDOS TODOS OS FILTROS - AGORA MOSTRA TODOS OS JOGOS SEM FILTRAGEM
+            df_filtrado = df_resultados.copy()
 
-            # Exibir estatísticas dos filtros
-            st.info(f"🔷 Exibindo {len(df_filtrado)} de {len(df_resultados)} Jogos Após Filtros")
+            # Exibir estatísticas
+            st.info(f"🔷 Exibindo todos os {len(df_filtrado)} Jogos Disponíveis")
 
             # Exibir tabela completa com TODAS as colunas
             st.dataframe(df_filtrado, use_container_width=True, height=600)
@@ -981,56 +846,151 @@ with tabs[1]:
         if dicas:
             st.success(f"✅ {len(dicas)} dicas inteligentes encontradas!")
 
-            # Filtros
-            col1, col2 = st.columns(2)
+            # Converter dicas para DataFrame para facilitar filtros
+            df_dicas = pd.DataFrame(dicas)
+
+            # 🔥 CORREÇÃO: PEGAR DATAS REAIS DOS JOGOS
+            # Criar mapeamento de jogos para datas
+            mapa_datas = {}
+            for _, jogo in df_proximos_jogos.iterrows():
+                mandante = jogo.get('HomeTeam', '')
+                visitante = jogo.get('AwayTeam', '')
+                data = jogo.get('Date', '')
+
+                if mandante and visitante and not pd.isna(data):
+                    chave_jogo = f"{mandante} x {visitante}"
+                    # Formatando a data corretamente
+                    if hasattr(data, 'strftime'):
+                        data_formatada = data.strftime('%d/%m/%Y')
+                    else:
+                        try:
+                            data_formatada = pd.to_datetime(data).strftime('%d/%m/%Y')
+                        except:
+                            data_formatada = str(data)
+                    mapa_datas[chave_jogo] = data_formatada
+
+            # Adicionar coluna de data REAL aos dados
+            df_dicas['Data'] = df_dicas['Jogo'].map(mapa_datas)
+
+            # Preencher datas faltantes com "Data não disponível"
+            df_dicas['Data'].fillna('Data não disponível', inplace=True)
+
+            # Extrair times do jogo
+            df_dicas['Time_Casa'] = df_dicas['Jogo'].apply(lambda x: x.split(' x ')[0] if ' x ' in x else '')
+            df_dicas['Time_Fora'] = df_dicas['Jogo'].apply(lambda x: x.split(' x ')[1] if ' x ' in x else '')
+
+            # 🔍 CAIXAS DE PESQUISA NA PARTE SUPERIOR
+            st.subheader("🔍 Filtros de Pesquisa")
+
+            col1, col2, col3 = st.columns([2, 2, 1])
+
             with col1:
-                liga_filtro = st.selectbox("Filtrar por Liga:",
-                                           ["Todas"] + list(set([d['Liga'] for d in dicas])))
+                # Filtro por data - TODAS AS DATAS DISPONÍVEIS
+                datas_unicas = sorted([d for d in df_dicas['Data'].unique() if d != 'Data não disponível'])
+                if datas_unicas:
+                    data_filtro = st.selectbox(
+                        "📅 Filtrar por Data:",
+                        options=["Todas as datas"] + datas_unicas,
+                        help="Selecione uma data específica"
+                    )
+                else:
+                    data_filtro = "Todas as datas"
+                    st.selectbox("📅 Filtrar por Data:", ["Todas as datas"], disabled=True)
+
             with col2:
-                times_unicos = list(
-                    set([d['Jogo'].split(' x ')[0] for d in dicas] + [d['Jogo'].split(' x ')[1] for d in dicas]))
-                time_filtro = st.selectbox("Filtrar por Time:", ["Todos"] + times_unicos)
+                # Filtro por equipe - TODAS AS EQUIPES DISPONÍVEIS
+                todas_equipes = sorted(list(set(df_dicas['Time_Casa'].unique()) | set(df_dicas['Time_Fora'].unique())))
+                todas_equipes = [e for e in todas_equipes if e and e != '']  # Remover valores vazios
+
+                if todas_equipes:
+                    equipe_filtro = st.selectbox(
+                        "⚽ Filtrar por Equipe:",
+                        options=["Todas as equipes"] + todas_equipes,
+                        help="Selecione uma equipe específica"
+                    )
+                else:
+                    equipe_filtro = "Todas as equipes"
+                    st.selectbox("⚽ Filtrar por Equipe:", ["Todas as equipes"], disabled=True)
+
+            with col3:
+                # Filtro por liga - TODAS AS LIGAS DISPONÍVEIS
+                ligas_unicas = sorted([l for l in df_dicas['Liga'].unique() if l and l != ''])  # Remover valores vazios
+
+                if ligas_unicas:
+                    liga_filtro = st.selectbox(
+                        "🏆 Filtrar por Liga:",
+                        options=["Todas as ligas"] + ligas_unicas,
+                        help="Selecione uma liga específica"
+                    )
+                else:
+                    liga_filtro = "Todas as ligas"
+                    st.selectbox("🏆 Filtrar por Liga:", ["Todas as ligas"], disabled=True)
 
             # Aplicar filtros
-            dicas_filtradas = dicas
-            if liga_filtro != "Todas":
-                dicas_filtradas = [d for d in dicas_filtradas if d['Liga'] == liga_filtro]
-            if time_filtro != "Todos":
-                dicas_filtradas = [d for d in dicas_filtradas if time_filtro in d['Jogo']]
+            dicas_filtradas = df_dicas.copy()
 
-            # Exibir dicas
-            st.subheader(f"🎯 {len(dicas_filtradas)} Dicas Filtradas")
+            if data_filtro != "Todas as datas":
+                dicas_filtradas = dicas_filtradas[dicas_filtradas['Data'] == data_filtro]
 
-            for dica in dicas_filtradas:
-                st.markdown(f"""
-                <div class="dica-item">
-                    <div class="dica-header">{dica['Jogo']} - {dica['Liga']}</div>
-                    <div class="dica-content">{dica['Dica']}</div>
-                </div>
-                """, unsafe_allow_html=True)
+            if equipe_filtro != "Todas as equipes":
+                dicas_filtradas = dicas_filtradas[
+                    (dicas_filtradas['Time_Casa'] == equipe_filtro) |
+                    (dicas_filtradas['Time_Fora'] == equipe_filtro)
+                    ]
+
+            if liga_filtro != "Todas as ligas":
+                dicas_filtradas = dicas_filtradas[dicas_filtradas['Liga'] == liga_filtro]
+
+            # Converter de volta para lista de dicionários
+            dicas_filtradas_list = dicas_filtradas.to_dict('records')
+
+            # Exibir estatísticas dos filtros
+            st.info(f"🔷 Mostrando {len(dicas_filtradas_list)} de {len(dicas)} dicas após filtros")
+
+            # 📊 Mostrar contagem de opções disponíveis
+            col_info1, col_info2, col_info3 = st.columns(3)
+            with col_info1:
+                st.caption(f"📅 {len(datas_unicas)} datas disponíveis")
+            with col_info2:
+                st.caption(f"⚽ {len(todas_equipes)} equipes disponíveis")
+            with col_info3:
+                st.caption(f"🏆 {len(ligas_unicas)} ligas disponíveis")
+
+            # Exibir dicas filtradas
+            st.subheader(f"🎯 Dicas Filtradas")
+
+            if dicas_filtradas_list:
+                for dica in dicas_filtradas_list:
+                    st.markdown(f"""
+                    <div class="dica-item">
+                        <div class="dica-header">{dica['Jogo']} - {dica['Liga']} - {dica['Data']}</div>
+                        <div class="dica-content">{dica['Dica']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.warning("⚠️ Nenhuma dica encontrada com os filtros aplicados.")
+                st.info("💡 Tente relaxar os filtros para ver mais dicas.")
 
             # Estatísticas das dicas
             st.subheader("📈 Estatísticas das Dicas")
             col1, col2, col3 = st.columns(3)
 
-            total_dicas = len(dicas_filtradas)
-            if total_dicas > 0:
-                dicas_por_liga = pd.DataFrame(dicas_filtradas)['Liga'].value_counts()
+            total_dicas_filtradas = len(dicas_filtradas_list)
+            total_dicas_geral = len(dicas)
 
-                col1.metric("Total de Dicas", total_dicas)
+            col1.metric("Dicas Filtradas", total_dicas_filtradas)
+            col2.metric("Total de Dicas", total_dicas_geral)
+
+            if total_dicas_filtradas > 0:
+                dicas_por_liga = pd.DataFrame(dicas_filtradas_list)['Liga'].value_counts()
                 if not dicas_por_liga.empty:
-                    col2.metric("Liga com Mais Dicas", dicas_por_liga.index[0])
-                    col3.metric("Dicas na Liga", dicas_por_liga.iloc[0])
-            else:
-                col1.metric("Total de Dicas", 0)
-                col2.metric("Liga com Mais Dicas", "-")
-                col3.metric("Dicas na Liga", 0)
+                    col3.metric("Liga Principal", dicas_por_liga.index[0])
+
+            # Botão para limpar filtros
+            if st.button("🧹 Limpar Filtros", help="Voltar a mostrar todas as dicas"):
+                st.rerun()
 
         else:
             st.warning("⚠️ Nenhuma dica inteligente encontrada. Verifique os dados.")
     else:
         st.error("❌ Dados não disponíveis para análise")
-
-# Rodapé
-st.markdown("---")
-st.caption("Dados obtidos de Webscraping | Sistema desenvolvido com Streamlit | FutAlgorithm ®️")
