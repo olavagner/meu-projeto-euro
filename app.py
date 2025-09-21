@@ -15,74 +15,170 @@ import time
 # Configuração da página
 st.set_page_config(page_title="FutAlgorithm", page_icon="⚽", layout="wide")
 
-# Configurações de estilo
+# Configurações de estilo - TEMA ESCURO
 st.markdown("""
     <style>
+    /* TEMA ESCURO COMPLETO */
+    .main {
+        background-color: #0E1117;
+        color: #FFFFFF;
+    }
+    .stApp {
+        background-color: #0E1117;
+    }
     .main-header {
         font-size: 2.5rem;
         color: #1E88E5;
         text-align: center;
         margin-bottom: 1rem;
+        font-weight: bold;
     }
     .sub-header {
         font-size: 1.8rem;
-        color: #0D47A1;
+        color: #64B5F6;
         margin-top: 1.5rem;
         margin-bottom: 1rem;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 10px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .stProgress > div > div > div > div {
-        background-color: #1E88E5;
-    }
-    .stButton>button {
-        background-color: #1E88E5;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
         font-weight: bold;
-        transition: all 0.3s ease;
     }
-    .stButton>button:hover {
-        background-color: #0D47A1;
-        transform: scale(1.05);
+    .positive-value { color: #4CAF50; font-weight: bold; }
+    .negative-value { color: #F44336; font-weight: bold; }
+    .neutral-value { color: #FF9800; font-weight: bold; }
+    .stDataFrame { 
+        font-size: 0.9rem;
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+    }
+
+    /* CARDS DAS DICAS - TEMA ESCURO */
+    .dica-item {
+        background-color: #1E1E1E;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+        border-left: 4px solid #1E88E5;
+        color: #FFFFFF;
+        font-family: 'Arial', sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+    }
+    .dica-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+    .dica-header {
+        font-weight: bold;
+        color: #64B5F6;
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+    }
+    .dica-content {
+        color: #E0E0E0;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    /* BOTÕES E FILTROS - TEMA ESCURO */
+    .stSelectbox > div > div {
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+    }
+    .stSelectbox label {
+        color: #64B5F6 !important;
+        font-weight: bold;
+    }
+
+    /* METRIC CARDS - TEMA ESCURO */
+    .stMetric {
+        background-color: #1E1E1E;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    .css-1r6slb0 {
+        color: #64B5F6 !important;
+    }
+    .css-1fv8s86 {
+        color: #FFFFFF !important;
+    }
+
+    /* TABELA - TEMA ESCURO */
+    .dataframe {
+        background-color: #1E1E1E !important;
+        color: #FFFFFF !important;
+    }
+    .dataframe th {
+        background-color: #2D2D2D !important;
+        color: #64B5F6 !important;
+    }
+    .dataframe td {
+        background-color: #1E1E1E !important;
+        color: #FFFFFF !important;
+        border: 1px solid #333 !important;
+    }
+
+    /* ABAS - TEMA ESCURO */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #1E1E1E;
+        color: #FFFFFF;
+        border-radius: 8px 8px 0 0;
+        padding: 10px 20px;
+        border: 1px solid #333;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #1E88E5 !important;
+        color: #FFFFFF !important;
+        font-weight: bold;
+    }
+
+    /* SCROLLBAR PERSONALIZADA */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #1E1E1E;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #1E88E5;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #1565C0;
+    }
+
+    /* ESTILO PARA CITAÇÃO */
+    .citacao {
+        font-size: 0.9rem;
+        font-style: italic;
+        color: #888;
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+
+    /* ESTILO PARA FILTROS */
+    .filtro-section {
+        background-color: #1E1E1E;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #333;
+    }
+    .filtro-header {
+        color: #64B5F6;
+        font-weight: bold;
+        margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Configuração do matplotlib para evitar avisos de muitas figuras abertas
-plt.rcParams['figure.max_open_warning'] = 50
-
-
-# Função para limpar figuras
-def limpar_figuras():
-    """Fecha todas as figuras matplotlib abertas"""
-    plt.close('all')
-
-
-# Função segura para criar gráficos
-def criar_grafico_seguro():
-    """Cria figura com tratamento de erro"""
-    try:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        return fig, ax
-    except Exception as e:
-        st.error(f"Erro ao criar figura: {e}")
-        return None, None
-
-
-st.markdown('<h1 class="main-header">💀 FutAlgorithm - Análise de Apostas Europeias 2025-2026 ⚡️</h1>',
-            unsafe_allow_html=True)
-st.markdown("---")
-
 
 # Remover cache para garantir dados sempre atualizados
-@st.cache_data(ttl=3600)  # 1 hora de cache
+@st.cache_data(ttl=3600)
 def carregar_dados_excel(url):
     try:
         response = requests.get(url)
@@ -90,22 +186,19 @@ def carregar_dados_excel(url):
         excel_file = BytesIO(response.content)
         todas_abas = pd.read_excel(excel_file, sheet_name=None)
         abas_disponiveis = list(todas_abas.keys())
-        st.success(
-            f"✅ Arquivo carregado com sucesso! {len(abas_disponiveis)} ligas encontradas - {datetime.now().strftime('%H:%M:%S')}")
         return todas_abas, abas_disponiveis
     except Exception as e:
         st.error(f"❌ Erro ao carregar dados: {e}")
         return None, None
 
 
-@st.cache_data(ttl=1800)  # 30 minutos de cache
+@st.cache_data(ttl=1800)
 def carregar_proximos_jogos(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
         excel_file = BytesIO(response.content)
         df_jogos = pd.read_excel(excel_file)
-        st.success(f"✅ Dados do simulador carregados com sucesso! - {datetime.now().strftime('%H:%M:%S')}")
         return df_jogos
     except Exception as e:
         st.error(f"❌ Erro ao carregar dados do simulador: {e}")
@@ -116,941 +209,828 @@ def carregar_proximos_jogos(url):
 todas_abas, abas_disponiveis = carregar_dados_excel(url_excel)
 df_proximos_jogos = carregar_proximos_jogos(url_proximos_jogos)
 
-# Exibir hora da última atualização
-st.sidebar.markdown(f"**Última atualização:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-
-# Mapeamento completo com as ligas principais
+# Mapeamento de ligas
 mapeamento_ligas = {
-    'E0': 'Premier League (Inglaterra)', 'E1': 'Championship (Inglaterra)', 'E2': 'League One (Inglaterra)',
-    'E3': 'League Two (Inglaterra)',
-    'SC0': 'Premiership (Escócia)', 'SC1': 'Championship (Escócia)', 'SC2': 'League One (Escócia)',
-    'SC3': 'League Two (Escócia)',
-    'D1': 'Bundesliga (Alemanha)', 'D2': '2. Bundesliga (Alemanha)', 'I1': 'Serie A (Itália)', 'I2': 'Serie B (Itália)',
-    'SP1': 'La Liga (Espanha)', 'SP2': 'La Liga 2 (Espanha)', 'F1': 'Ligue 1 (França)', 'F2': 'Ligue 2 (França)',
-    'N1': 'Eredivisie (Holanda)', 'B1': 'Jupiler Pro League (Bélgica)', 'P1': 'Primeira Liga (Portugal)',
-    'T1': 'Super Lig (Turquia)', 'G1': 'Super League (Grécia)'
-}
-
-# Verificação das ligas
-st.sidebar.markdown("### 🔍 VERIFICAÇÃO DE LIGAS")
-if abas_disponiveis:
-    st.sidebar.write(f"**Total de ligas carregadas:** {len(abas_disponiveis)}")
-else:
-    st.sidebar.write("❌ Nenhuma liga foi carregada")
-
-# Dicionário de tradução das colunas
-traducao_colunas = {
-    'Div': 'Liga', 'Date': 'Data', 'Time': 'Hora', 'HomeTeam': 'Mandante', 'AwayTeam': 'Visitante',
-    'FTHG': 'Gols Casa', 'FTAG': 'Gols Fora', 'FTR': 'Resultado Final', 'HTHG': 'Gols Casa 1T', 'HTAG': 'Gols Fora 1T',
-    'HTR': 'Resultado 1T', 'HS': 'Chutes Mandante', 'AS': 'Chutes Visitante', 'HST': 'Chutes no Gol Mandante',
-    'AST': 'Chutes no Gol Visitante', 'HF': 'Faltas Mandante', 'AF': 'Faltas Visitante', 'HC': 'Escanteios Mandante',
-    'AC': 'Escanteios Visitante', 'HY': 'Cartões Amarelos Mandante', 'AY': 'Cartões Amarelos Visitante',
-    'HR': 'Cartões Vermelhos Mandante', 'AR': 'Cartões Vermelhos Visitante', 'B365H': 'B365 Casa',
-    'B365D': 'B365 Empate', 'B365A': 'B365 Fora', 'B365>2.5': 'B365 Over 2.5', 'B365<2.5': 'B365 Under 2.5'
+    'E0': 'Premier League', 'E1': 'Championship', 'E2': 'League One', 'E3': 'League Two',
+    'SC0': 'Premiership', 'SC1': 'Championship', 'SC2': 'League One', 'SC3': 'League Two',
+    'D1': 'Bundesliga', 'D2': '2. Bundesliga', 'I1': 'Serie A', 'I2': 'Serie B',
+    'SP1': 'La Liga', 'SP2': 'La Liga 2', 'F1': 'Ligue 1', 'F2': 'Ligue 2',
+    'N1': 'Eredivisie', 'B1': 'Jupiler Pro League', 'P1': 'Primeira Liga',
+    'T1': 'Super Lig', 'G1': 'Super League'
 }
 
 
-def traduzir_colunas_df(df):
-    df_traduzido = df.copy()
-    colunas_renomear = {}
-    for coluna in df_traduzido.columns:
-        if coluna in traducao_colunas:
-            colunas_renomear[coluna] = traducao_colunas[coluna]
-    df_traduzido = df_traduzido.rename(columns=colunas_renomear)
-    return df_traduzido
+# FUNÇÕES DO ALGORITMO
+def obter_ultimos_jogos_por_cenario(df_liga, time, cenario, num_jogos=10):
+    """Obtém os últimos N jogos de um time em um cenário específico"""
+    if cenario == 'mandante':
+        jogos = df_liga[df_liga['HomeTeam'] == time].tail(num_jogos)
+    elif cenario == 'visitante':
+        jogos = df_liga[df_liga['AwayTeam'] == time].tail(num_jogos)
+    else:  # geral
+        jogos_casa = df_liga[df_liga['HomeTeam'] == time].tail(num_jogos)
+        jogos_fora = df_liga[df_liga['AwayTeam'] == time].tail(num_jogos)
+        jogos = pd.concat([jogos_casa, jogos_fora]).tail(num_jogos)
+    return jogos
 
 
-def calcular_probabilidades(odd):
-    if pd.isna(odd) or odd <= 0:
-        return 0
-    return round((1 / odd) * 100, 1)
-
-
-def formatar_probabilidade(valor):
-    return f"{valor}%"
-
-
-def calcular_relatorio_liga(df_liga, nome_liga):
-    if df_liga.empty:
+def calcular_estatisticas_completas(jogos, time, cenario):
+    """Calcula estatísticas COMPLETAS para um cenário específico"""
+    if jogos.empty:
         return None
 
-    relatorio = {'Liga': nome_liga, 'Total de Jogos': len(df_liga), 'Estatísticas': {}}
-
-    if 'FTR' in df_liga.columns:
-        total_jogos = len(df_liga)
-        vitorias_casa = len(df_liga[df_liga['FTR'] == 'H'])
-        empates = len(df_liga[df_liga['FTR'] == 'D'])
-        vitorias_fora = len(df_liga[df_liga['FTR'] == 'A'])
-        relatorio['Estatísticas']['Vitória do Mandante'] = f"{(vitorias_casa / total_jogos) * 100:.1f}%"
-        relatorio['Estatísticas']['Empate'] = f"{(empates / total_jogos) * 100:.1f}%"
-        relatorio['Estatísticas']['Vitória do Visitante'] = f"{(vitorias_fora / total_jogos) * 100:.1f}%"
-
-    if 'HTHG' in df_liga.columns and 'HTAG' in df_liga.columns and 'FTHG' in df_liga.columns and 'FTAG' in df_liga.columns:
-        total_jogos = len(df_liga)
-        total_gols_ht = df_liga['HTHG'].sum() + df_liga['HTAG'].sum()
-        media_gols_ht = total_gols_ht / total_jogos
-        relatorio['Estatísticas']['Gols HT por Jogo'] = f"{media_gols_ht:.2f}"
-        total_gols_ft = df_liga['FTHG'].sum() + df_liga['FTAG'].sum()
-        media_gols_ft = total_gols_ft / total_jogos
-        relatorio['Estatísticas']['Gols FT por Jogo'] = f"{media_gols_ft:.2f}"
-
-    if 'HTHG' in df_liga.columns and 'HTAG' in df_liga.columns:
-        total_jogos = len(df_liga)
-        jogos_over_05_ht = len(df_liga[(df_liga['HTHG'] + df_liga['HTAG']) > 0.5])
-        relatorio['Estatísticas']['Over 0.5 HT'] = f"{(jogos_over_05_ht / total_jogos) * 100:.1f}%"
-        jogos_over_15_ht = len(df_liga[(df_liga['HTHG'] + df_liga['HTAG']) > 1.5])
-        relatorio['Estatísticas']['Over 1.5 HT'] = f"{(jogos_over_15_ht / total_jogos) * 100:.1f}%"
-
-    if 'FTHG' in df_liga.columns and 'FTAG' in df_liga.columns:
-        total_jogos = len(df_liga)
-        jogos_over_05_ft = len(df_liga[(df_liga['FTHG'] + df_liga['FTAG']) > 0.5])
-        relatorio['Estatísticas']['Over 0.5 FT'] = f"{(jogos_over_05_ft / total_jogos) * 100:.1f}%"
-        jogos_over_15_ft = len(df_liga[(df_liga['FTHG'] + df_liga['FTAG']) > 1.5])
-        relatorio['Estatísticas']['Over 1.5 FT'] = f"{(jogos_over_15_ft / total_jogos) * 100:.1f}%"
-        jogos_over_25_ft = len(df_liga[(df_liga['FTHG'] + df_liga['FTAG']) > 2.5])
-        relatorio['Estatísticas']['Over 2.5 FT'] = f"{(jogos_over_25_ft / total_jogos) * 100:.1f}%"
-        btts_ft = len(df_liga[(df_liga['FTHG'] > 0) & (df_liga['FTAG'] > 0)])
-        relatorio['Estatísticas']['BTTS FT'] = f"{(btts_ft / total_jogos) * 100:.1f}%"
-
-    return relatorio
-
-
-def calcular_estatisticas_ultimos_5_jogos(df_liga, nome_time):
-    jogos_mandante = df_liga[df_liga['HomeTeam'] == nome_time]
-    jogos_visitante = df_liga[df_liga['AwayTeam'] == nome_time]
-    todos_jogos = pd.concat([jogos_mandante, jogos_visitante])
-
-    if len(todos_jogos) == 0:
-        return None
-
-    if 'Date' in todos_jogos.columns:
-        todos_jogos = todos_jogos.sort_values('Date', ascending=False)
-
-    ultimos_5 = todos_jogos.head(5)
-
-    if len(ultimos_5) == 0:
-        return None
-
-    estatisticas = {
-        'jogos_analisados': len(ultimos_5), 'vitorias': 0, 'empates': 0, 'derrotas': 0,
-        'over_05_ht': 0, 'over_05_ft': 0, 'over_15_ft': 0, 'over_25_ft': 0, 'btts': 0,
-        'gols_marcados_ht': 0, 'gols_sofridos_ht': 0, 'gols_marcados_ft': 0, 'gols_sofridos_ft': 0,
-        'chutes_gol': [], 'chutes': [], 'escanteios_favor': [], 'escanteios_contra': [],
-        'amarelos_favor': [], 'amarelos_contra': [], 'faltas_favor': [], 'faltas_contra': [],
-        'impedimentos_favor': [], 'impedimentos_contra': []
+    stats = {
+        'jogos_analisados': len(jogos),
+        'vitorias': 0, 'empates': 0, 'derrotas': 0,
+        'gols_marcados_ft': 0, 'gols_sofridos_ft': 0,
+        'gols_marcados_ht': 0, 'gols_sofridos_ht': 0,
+        'over_05_ht': 0, 'over_05_ft': 0, 'over_15_ft': 0, 'over_25_ft': 0, 'over_35_ft': 0, 'btts': 0,
+        'chutes_total': 0, 'chutes_gol': 0,
+        'escanteios': 0, 'cartoes_amarelos': 0, 'faltas': 0, 'impedimentos': 0
     }
 
-    for _, jogo in ultimos_5.iterrows():
-        if jogo['HomeTeam'] == nome_time:
-            gols_feitos_ft = jogo['FTHG'] if 'FTHG' in jogo else 0
-            gols_sofridos_ft = jogo['FTAG'] if 'FTAG' in jogo else 0
-            gols_feitos_ht = jogo['HTHG'] if 'HTHG' in jogo else 0
-            gols_sofridos_ht = jogo['HTAG'] if 'HTAG' in jogo else 0
+    for _, jogo in jogos.iterrows():
+        is_mandante = jogo['HomeTeam'] == time
 
-            if jogo['FTR'] == 'H':
-                estatisticas['vitorias'] += 1
-            elif jogo['FTR'] == 'D':
-                estatisticas['empates'] += 1
-            else:
-                estatisticas['derrotas'] += 1
+        if is_mandante:
+            gols_feitos_ft = jogo.get('FTHG', 0)
+            gols_sofridos_ft = jogo.get('FTAG', 0)
+            gols_feitos_ht = jogo.get('HTHG', 0)
+            gols_sofridos_ht = jogo.get('HTAG', 0)
+            resultado = jogo.get('FTR', '')
 
-            estatisticas['chutes_gol'].append(jogo['HST'] if 'HST' in jogo and not pd.isna(jogo['HST']) else 0)
-            estatisticas['chutes'].append(jogo['HS'] if 'HS' in jogo and not pd.isna(jogo['HS']) else 0)
-            estatisticas['escanteios_favor'].append(jogo['HC'] if 'HC' in jogo and not pd.isna(jogo['HC']) else 0)
-            estatisticas['escanteios_contra'].append(jogo['AC'] if 'AC' in jogo and not pd.isna(jogo['AC']) else 0)
-            estatisticas['amarelos_favor'].append(jogo['HY'] if 'HY' in jogo and not pd.isna(jogo['HY']) else 0)
-            estatisticas['amarelos_contra'].append(jogo['AY'] if 'AY' in jogo and not pd.isna(jogo['AY']) else 0)
-            estatisticas['faltas_favor'].append(jogo['HF'] if 'HF' in jogo and not pd.isna(jogo['HF']) else 0)
-            estatisticas['faltas_contra'].append(jogo['AF'] if 'AF' in jogo and not pd.isna(jogo['AF']) else 0)
-
-            if 'HI' in jogo and not pd.isna(jogo['HI']):
-                estatisticas['impedimentos_favor'].append(jogo['HI'])
-            if 'AI' in jogo and not pd.isna(jogo['AI']):
-                estatisticas['impedimentos_contra'].append(jogo['AI'])
+            stats['chutes_total'] += jogo.get('HS', 0)
+            stats['chutes_gol'] += jogo.get('HST', 0)
+            stats['escanteios'] += jogo.get('HC', 0)
+            stats['cartoes_amarelos'] += jogo.get('HY', 0)
+            stats['faltas'] += jogo.get('HF', 0)
+            stats['impedimentos'] += jogo.get('HI', 0) if 'HI' in jogo else 0
         else:
-            gols_feitos_ft = jogo['FTAG'] if 'FTAG' in jogo else 0
-            gols_sofridos_ft = jogo['FTHG'] if 'FTHG' in jogo else 0
-            gols_feitos_ht = jogo['HTAG'] if 'HTAG' in jogo else 0
-            gols_sofridos_ht = jogo['HTHG'] if 'HTHG' in jogo else 0
+            gols_feitos_ft = jogo.get('FTAG', 0)
+            gols_sofridos_ft = jogo.get('FTHG', 0)
+            gols_feitos_ht = jogo.get('HTAG', 0)
+            gols_sofridos_ht = jogo.get('HTHG', 0)
+            resultado = 'A' if jogo.get('FTR', '') == 'H' else ('H' if jogo.get('FTR', '') == 'A' else 'D')
 
-            if jogo['FTR'] == 'A':
-                estatisticas['vitorias'] += 1
-            elif jogo['FTR'] == 'D':
-                estatisticas['empates'] += 1
-            else:
-                estatisticas['derrotas'] += 1
+            stats['chutes_total'] += jogo.get('AS', 0)
+            stats['chutes_gol'] += jogo.get('AST', 0)
+            stats['escanteios'] += jogo.get('AC', 0)
+            stats['cartoes_amarelos'] += jogo.get('AY', 0)
+            stats['faltas'] += jogo.get('AF', 0)
+            stats['impedimentos'] += jogo.get('AI', 0) if 'AI' in jogo else 0
 
-            estatisticas['chutes_gol'].append(jogo['AST'] if 'AST' in jogo and not pd.isna(jogo['AST']) else 0)
-            estatisticas['chutes'].append(jogo['AS'] if 'AS' in jogo and not pd.isna(jogo['AS']) else 0)
-            estatisticas['escanteios_favor'].append(jogo['AC'] if 'AC' in jogo and not pd.isna(jogo['AC']) else 0)
-            estatisticas['escanteios_contra'].append(jogo['HC'] if 'HC' in jogo and not pd.isna(jogo['HC']) else 0)
-            estatisticas['amarelos_favor'].append(jogo['AY'] if 'AY' in jogo and not pd.isna(jogo['AY']) else 0)
-            estatisticas['amarelos_contra'].append(jogo['HY'] if 'HY' in jogo and not pd.isna(jogo['HY']) else 0)
-            estatisticas['faltas_favor'].append(jogo['AF'] if 'AF' in jogo and not pd.isna(jogo['AF']) else 0)
-            estatisticas['faltas_contra'].append(jogo['HF'] if 'HF' in jogo and not pd.isna(jogo['HF']) else 0)
+        # Estatísticas básicas
+        stats['gols_marcados_ft'] += gols_feitos_ft
+        stats['gols_sofridos_ft'] += gols_sofridos_ft
+        stats['gols_marcados_ht'] += gols_feitos_ht
+        stats['gols_sofridos_ht'] += gols_sofridos_ht
 
-            if 'AI' in jogo and not pd.isna(jogo['AI']):
-                estatisticas['impedimentos_favor'].append(jogo['AI'])
-            if 'HI' in jogo and not pd.isna(jogo['HI']):
-                estatisticas['impedimentos_contra'].append(jogo['HI'])
+        if resultado == 'H' and is_mandante:
+            stats['vitorias'] += 1
+        elif resultado == 'A' and not is_mandante:
+            stats['vitorias'] += 1
+        elif resultado == 'D':
+            stats['empates'] += 1
+        else:
+            stats['derrotas'] += 1
 
-        estatisticas['gols_marcados_ht'] += gols_feitos_ht
-        estatisticas['gols_sofridos_ht'] += gols_sofridos_ht
-        estatisticas['gols_marcados_ft'] += gols_feitos_ft
-        estatisticas['gols_sofridos_ft'] += gols_sofridos_ft
+        # Estatísticas de mercado
+        gols_ht = gols_feitos_ht + gols_sofridos_ht
+        gols_ft = gols_feitos_ft + gols_sofridos_ft
 
-        total_gols_ht = gols_feitos_ht + gols_sofridos_ht
-        total_gols_ft = gols_feitos_ft + gols_sofridos_ft
+        if gols_ht > 0.5: stats['over_05_ht'] += 1
+        if gols_ft > 0.5: stats['over_05_ft'] += 1
+        if gols_ft > 1.5: stats['over_15_ft'] += 1
+        if gols_ft > 2.5: stats['over_25_ft'] += 1
+        if gols_ft > 3.5: stats['over_35_ft'] += 1
+        if gols_feitos_ft > 0 and gols_sofridos_ft > 0: stats['btts'] += 1
 
-        if total_gols_ht > 0.5:
-            estatisticas['over_05_ht'] += 1
-        if total_gols_ft > 0.5:
-            estatisticas['over_05_ft'] += 1
-        if total_gols_ft > 1.5:
-            estatisticas['over_15_ft'] += 1
-        if total_gols_ft > 2.5:
-            estatisticas['over_25_ft'] += 1
-        if gols_feitos_ft > 0 and gols_sofridos_ft > 0:
-            estatisticas['btts'] += 1
+    # Calcular médias
+    if stats['jogos_analisados'] > 0:
+        stats['media_gols_marcados_ft'] = stats['gols_marcados_ft'] / stats['jogos_analisados']
+        stats['media_gols_sofridos_ft'] = stats['gols_sofridos_ft'] / stats['jogos_analisados']
+        stats['media_gols_marcados_ht'] = stats['gols_marcados_ht'] / stats['jogos_analisados']
+        stats['media_gols_sofridos_ht'] = stats['gols_sofridos_ht'] / stats['jogos_analisados']
+        stats['media_gols_total_ft'] = stats['media_gols_marcados_ft'] + stats['media_gols_sofridos_ft']
+        stats['media_gols_total_ht'] = stats['media_gols_marcados_ht'] + stats['media_gols_sofridos_ht']
 
-    estatisticas['media_gols_marcados_ht'] = estatisticas['gols_marcados_ht'] / estatisticas['jogos_analisados'] if \
-    estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_gols_sofridos_ht'] = estatisticas['gols_sofridos_ht'] / estatisticas['jogos_analisados'] if \
-    estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_ht'] = estatisticas['media_gols_marcados_ht'] + estatisticas['media_gols_sofridos_ht']
-    estatisticas['media_gols_marcados_ft'] = estatisticas['gols_marcados_ft'] / estatisticas['jogos_analisados'] if \
-    estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_gols_sofridos_ft'] = estatisticas['gols_sofridos_ft'] / estatisticas['jogos_analisados'] if \
-    estatisticas['jogos_analisados'] > 0 else 0
-    estatisticas['media_ft'] = estatisticas['media_gols_marcados_ft'] + estatisticas['media_gols_sofridos_ft']
+        stats['media_chutes_total'] = stats['chutes_total'] / stats['jogos_analisados']
+        stats['media_chutes_gol'] = stats['chutes_gol'] / stats['jogos_analisados']
+        stats['media_escanteios'] = stats['escanteios'] / stats['jogos_analisados']
+        stats['media_cartoes_amarelos'] = stats['cartoes_amarelos'] / stats['jogos_analisados']
+        stats['media_faltas'] = stats['faltas'] / stats['jogos_analisados']
+        stats['media_impedimentos'] = stats['impedimentos'] / stats['jogos_analisados'] if stats[
+                                                                                               'impedimentos'] > 0 else 0
 
-    # Adicionar mais estatísticas
-    estatisticas['media_chutes_gol'] = sum(estatisticas['chutes_gol']) / len(estatisticas['chutes_gol']) if \
-    estatisticas['chutes_gol'] else 0
-    estatisticas['media_chutes'] = sum(estatisticas['chutes']) / len(estatisticas['chutes']) if estatisticas[
-        'chutes'] else 0
-    estatisticas['media_escanteios_favor'] = sum(estatisticas['escanteios_favor']) / len(
-        estatisticas['escanteios_favor']) if estatisticas['escanteios_favor'] else 0
-    estatisticas['media_escanteios_contra'] = sum(estatisticas['escanteios_contra']) / len(
-        estatisticas['escanteios_contra']) if estatisticas['escanteios_contra'] else 0
-    estatisticas['media_amarelos_favor'] = sum(estatisticas['amarelos_favor']) / len(estatisticas['amarelos_favor']) if \
-    estatisticas['amarelos_favor'] else 0
-    estatisticas['media_amarelos_contra'] = sum(estatisticas['amarelos_contra']) / len(
-        estatisticas['amarelos_contra']) if estatisticas['amarelos_contra'] else 0
-    estatisticas['media_faltas_favor'] = sum(estatisticas['faltas_favor']) / len(estatisticas['faltas_favor']) if \
-    estatisticas['faltas_favor'] else 0
-    estatisticas['media_faltas_contra'] = sum(estatisticas['faltas_contra']) / len(estatisticas['faltas_contra']) if \
-    estatisticas['faltas_contra'] else 0
+        for key in ['over_05_ht', 'over_05_ft', 'over_15_ft', 'over_25_ft', 'over_35_ft', 'btts']:
+            stats[key] = (stats[key] / stats['jogos_analisados']) * 100
 
-    # Adicionar impedimentos se disponíveis
-    if estatisticas['impedimentos_favor']:
-        estatisticas['media_impedimentos_favor'] = sum(estatisticas['impedimentos_favor']) / len(
-            estatisticas['impedimentos_favor'])
-    if estatisticas['impedimentos_contra']:
-        estatisticas['media_impedimentos_contra'] = sum(estatisticas['impedimentos_contra']) / len(
-            estatisticas['impedimentos_contra'])
-
-    return estatisticas
+    return stats
 
 
-def obter_cor_percentual(percentual):
-    if percentual >= 80:
-        return "🟢"
-    elif percentual >= 60:
-        return "🟡"
-    else:
-        return "🔴"
+def calcular_probabilidades_avancadas(df_liga, mandante, visitante):
+    """Calcula probabilidades AVANÇADAS para o confronto"""
+    cenarios = ['mandante', 'visitante', 'geral']
+    pesos = {'mandante': 0.4, 'visitante': 0.4, 'geral': 0.2}
+
+    resultados = {}
+
+    for cenario in cenarios:
+        # Estatísticas do mandante
+        jogos_mandante = obter_ultimos_jogos_por_cenario(df_liga, mandante, cenario)
+        stats_mandante = calcular_estatisticas_completas(jogos_mandante, mandante, cenario)
+
+        # Estatísticas do visitante
+        jogos_visitante = obter_ultimos_jogos_por_cenario(df_liga, visitante, cenario)
+        stats_visitante = calcular_estatisticas_completas(jogos_visitante, visitante, cenario)
+
+        if stats_mandante and stats_visitante:
+            # Calcular probabilidades para este cenário
+            prob_cenario = {
+                # Resultados
+                'casa_vence': (stats_mandante.get('vitorias', 0) / stats_mandante['jogos_analisados'] * 100 * 0.6 +
+                               stats_visitante.get('derrotas', 0) / stats_visitante['jogos_analisados'] * 100 * 0.4),
+                'empate': ((stats_mandante.get('empates', 0) / stats_mandante['jogos_analisados'] * 100 +
+                            stats_visitante.get('empates', 0) / stats_visitante['jogos_analisados'] * 100) / 2),
+
+                # Gols
+                'gols_ht_total': (stats_mandante.get('media_gols_total_ht', 0) + stats_visitante.get(
+                    'media_gols_total_ht', 0)) / 2,
+                'gols_ft_total': (stats_mandante.get('media_gols_total_ft', 0) + stats_visitante.get(
+                    'media_gols_total_ft', 0)) / 2,
+                'gols_casa_esperados': stats_mandante.get('media_gols_marcados_ft', 0) * 0.7 + stats_visitante.get(
+                    'media_gols_sofridos_ft', 0) * 0.3,
+                'gols_fora_esperados': stats_visitante.get('media_gols_marcados_ft', 0) * 0.7 + stats_mandante.get(
+                    'media_gols_sofridos_ft', 0) * 0.3,
+
+                # Mercados
+                'over_05_ht': (stats_mandante.get('over_05_ht', 0) + stats_visitante.get('over_05_ht', 0)) / 2,
+                'over_05_ft': (stats_mandante.get('over_05_ft', 0) + stats_visitante.get('over_05_ft', 0)) / 2,
+                'over_15_ft': (stats_mandante.get('over_15_ft', 0) + stats_visitante.get('over_15_ft', 0)) / 2,
+                'over_25_ft': (stats_mandante.get('over_25_ft', 0) + stats_visitante.get('over_25_ft', 0)) / 2,
+                'over_35_ft': (stats_mandante.get('over_35_ft', 0) + stats_visitante.get('over_35_ft', 0)) / 2,
+                'btts': (stats_mandante.get('btts', 0) + stats_visitante.get('btts', 0)) / 2,
+
+                # Estatísticas avançadas - Por equipe
+                'escanteios_casa_esperados': stats_mandante.get('media_escanteios', 0),
+                'escanteios_fora_esperados': stats_visitante.get('media_escanteios', 0),
+                'escanteios_total_ft': (
+                        stats_mandante.get('media_escanteios', 0) + stats_visitante.get('media_escanteios', 0)),
+
+                'finalizacoes_casa_esperadas': stats_mandante.get('media_chutes_total', 0),
+                'finalizacoes_fora_esperadas': stats_visitante.get('media_chutes_total', 0),
+                'finalizacoes_total_ft': (
+                        stats_mandante.get('media_chutes_total', 0) + stats_visitante.get('media_chutes_total', 0)),
+
+                'chutes_gol_casa_esperados': stats_mandante.get('media_chutes_gol', 0),
+                'chutes_gol_fora_esperados': stats_visitante.get('media_chutes_gol', 0),
+                'chutes_gol_total_ft': (
+                        stats_mandante.get('media_chutes_gol', 0) + stats_visitante.get('media_chutes_gol', 0)),
+
+                'cartoes_casa_esperados': stats_mandante.get('media_cartoes_amarelos', 0),
+                'cartoes_fora_esperados': stats_visitante.get('media_cartoes_amarelos', 0),
+                'cartoes_total_ft': (stats_mandante.get('media_cartoes_amarelos', 0) + stats_visitante.get(
+                    'media_cartoes_amarelos', 0)),
+
+                'impedimentos_total_ft': (
+                        stats_mandante.get('media_impedimentos', 0) + stats_visitante.get('media_impedimentos', 0))
+            }
+
+            resultados[cenario] = prob_cenario
+
+    # Combinar resultados com pesos
+    probabilidades_finais = {}
+    for metric in resultados['mandante'].keys():
+        total = 0
+        for cenario in cenarios:
+            total += resultados[cenario][metric] * pesos[cenario]
+        probabilidades_finais[metric] = min(max(total, 0), 100) if '%' in metric or metric in ['over_05_ht',
+                                                                                               'over_05_ft',
+                                                                                               'over_15_ft',
+                                                                                               'over_25_ft',
+                                                                                               'over_35_ft',
+                                                                                               'btts'] else round(total,
+                                                                                                                  2)
+
+    # Ajustar probabilidades de resultado
+    total_resultados = probabilidades_finais['casa_vence'] + probabilidades_finais['empate'] + (
+            100 - probabilidades_finais['casa_vence'] - probabilidades_finais['empate'])
+    probabilidades_finais['casa_vence'] = (probabilidades_finais['casa_vence'] / total_resultados) * 100
+    probabilidades_finais['empate'] = (probabilidades_finais['empate'] / total_resultados) * 100
+    probabilidades_finais['fora_vence'] = 100 - probabilidades_finais['casa_vence'] - probabilidades_finais['empate']
+
+    return probabilidades_finais
 
 
-def obter_probabilidade_historica_liga(codigo_liga, mercado):
-    if codigo_liga in todas_abas:
-        df_liga = todas_abas[codigo_liga]
-        relatorio = calcular_relatorio_liga(df_liga, mapeamento_ligas.get(codigo_liga, codigo_liga))
-        if relatorio and mercado in relatorio['Estatísticas']:
-            valor_str = relatorio['Estatísticas'][mercado].replace('%', '')
-            try:
-                return float(valor_str)
-            except:
-                return None
-    return None
-
-
-def analisar_probabilidades_partida(df_liga, mandante, visitante):
-    """
-    Analisa as probabilidades para diversos mercados baseado nos últimos 5 jogos
-    de ambas as equipes e retorna dicas personalizadas
-    """
-    # Obter estatísticas dos últimos 5 jogos
-    stats_mandante = calcular_estatisticas_ultimos_5_jogos(df_liga, mandante)
-    stats_visitante = calcular_estatisticas_ultimos_5_jogos(df_liga, visitante)
-
-    if not stats_mandante or not stats_visitante:
-        return None
-
-    # Calcular probabilidades combinadas
-    probabilidades = {}
-    dicas = []
-
-    # Over 0.5 HT - Probabilidade de haver gols no primeiro tempo
-    prob_mandante_ht = stats_mandante['over_05_ht'] / stats_mandante['jogos_analisados']
-    prob_visitante_ht = stats_visitante['over_05_ht'] / stats_visitante['jogos_analisados']
-    prob_combinada_ht = (prob_mandante_ht + prob_visitante_ht) / 2
-    probabilidades['over_05_ht'] = prob_combinada_ht * 100
-
-    # Over 1.5 FT
-    prob_mandante_15 = stats_mandante['over_15_ft'] / stats_mandante['jogos_analisados']
-    prob_visitante_15 = stats_visitante['over_15_ft'] / stats_visitante['jogos_analisados']
-    prob_combinada_15 = (prob_mandante_15 + prob_visitante_15) / 2
-    probabilidades['over_15_ft'] = prob_combinada_15 * 100
-
-    # Over 2.5 FT
-    prob_mandante_25 = stats_mandante['over_25_ft'] / stats_mandante['jogos_analisados']
-    prob_visitante_25 = stats_visitante['over_25_ft'] / stats_visitante['jogos_analisados']
-    prob_combinada_25 = (prob_mandante_25 + prob_visitante_25) / 2
-    probabilidades['over_25_ft'] = prob_combinada_25 * 100
-
-    # BTTS (Both Teams To Score)
-    prob_mandante_btts = stats_mandante['btts'] / stats_mandante['jogos_analisados']
-    prob_visitante_btts = stats_visitante['btts'] / stats_visitante['jogos_analisados']
-    prob_combinada_btts = (prob_mandante_btts + prob_visitante_btts) / 2
-    probabilidades['btts'] = prob_combinada_btts * 100
-
-    # Médias de gols
-    media_gols_marcados = (stats_mandante['media_gols_marcados_ft'] + stats_visitante['media_gols_marcados_ft']) / 2
-    media_gols_sofridos = (stats_mandante['media_gols_sofridos_ft'] + stats_visitante['media_gols_sofridos_ft']) / 2
-    media_total_gols = media_gols_marcados + media_gols_sofridos
-
-    # Médias de escanteios
-    media_escanteios_mandante = stats_mandante['media_escanteios_favor']
-    media_escanteios_visitante = stats_visitante['media_escanteios_favor']
-    media_escanteios_total = (media_escanteios_mandante + media_escanteios_visitante) / 2
-
-    # Gerar dicas baseadas nas probabilidades
-    if probabilidades['over_05_ht'] >= 72:
-        dicas.append(f"⚽ ALTA PROBABILIDADE GOLS NO 1º TEMPO - Média: {probabilidades['over_05_ht']:.1f}%")
-
-    if probabilidades['btts'] >= 70:
-        dicas.append(f"🎯 ALTA PROBABILIDADE BTTS - Média: {probabilidades['btts']:.1f}%")
-
-    if probabilidades['over_15_ft'] >= 75:
-        dicas.append(f"🎯 ALTA PROBABILIDADE OVER 1.5 FT - Média: {probabilidades['over_15_ft']:.1f}%")
-
-    if probabilidades['over_25_ft'] >= 65:
-        dicas.append(f"🎯 ALTA PROBABILIDADE OVER 2.5 FT - Média: {probabilidades['over_25_ft']:.1f}%")
-
-    if media_gols_marcados >= 1.8:
-        dicas.append(f"🎯 ATAQUES POTENTES - Média de gols marcados: {media_gols_marcados:.1f}")
-
-    if media_gols_sofridos >= 1.6:
-        dicas.append(f"⚠️ DEFESAS VULNERÁVEIS - Média de gols sofridos: {media_gols_sofridos:.1f}")
-
-    if media_escanteios_total >= 7.5:
-        dicas.append(f"🎯 ALTO VOLUME DE ESCANTEIOS - Média: {media_escanteios_total:.1f} por jogo")
-
-    return {
-        'probabilidades': probabilidades,
-        'dicas': dicas,
-        'medias': {
-            'gols_marcados': media_gols_marcados,
-            'gols_sofridos': media_gols_sofridos,
-            'total_gols': media_total_gols,
-            'escanteios': media_escanteios_total
-        }
-    }
-
-
-def calcular_pontuacao_confiança(analise):
-    """
-    Calcula uma pontuação de confiança para las recomendações (0-100)
-    """
-    pontuacao = 0
-
-    # Fator 2: Consistência das estatísticas
-    if analise['probabilidades']['over_05_ht'] >= 75:
-        pontuacao += 15
-    elif analise['probabilidades']['over_05_ht'] >= 65:
-        pontuacao += 10
-
-    if analise['probabilidades']['over_15_ft'] >= 75:
-        pontuacao += 15
-    elif analise['probabilidades']['over_15_ft'] >= 65:
-        pontuacao += 10
-
-    if analise['probabilidades']['over_25_ft'] >= 65:
-        pontuacao += 15
-    elif analise['probabilidades']['over_25_ft'] >= 55:
-        pontuacao += 10
-
-    if analise['probabilidades']['btts'] >= 70:
-        pontuacao += 15
-    elif analise['probabilidades']['btts'] >= 60:
-        pontuacao += 10
-
-    # Fator 3: Médias de gols
-    if analise['medias']['total_gols'] >= 2.8:
-        pontuacao += 20
-    elif analise['medias']['total_gols'] >= 2.3:
-        pontuacao += 15
-    elif analise['medias']['total_gols'] >= 1.8:
-        pontuacao += 10
-
-    # Limitar a 100
-    return min(pontuacao, 100)
-
-
-def simular_desempenho_mercados():
-    """
-    Simula o desempenho esperado para cada mercado com base nas taxas de acerto
-    """
-    mercados = [
-        {
-            'mercado': 'Over 0.5 HT',
-            'taxa_min': 72,
-            'taxa_max': 78,
-            'dificuldade': '🟢 Fácil',
-            'odds_min': 1.10,
-            'odds_max': 1.30,
-            'estrategia': 'Apostar em sequências consistentes'
-        },
-        {
-            'mercado': 'Over 0.5 FT',
-            'taxa_min': 85,
-            'taxa_max': 92,
-            'dificuldade': '🟢 Fácil',
-            'odds_min': 1.01,
-            'odds_max': 1.10,
-            'estrategia': 'Quase garantido, pouco valor'
-        },
-        {
-            'mercado': 'Over 1.5 FT',
-            'taxa_min': 70,
-            'taxa_max': 76,
-            'dificuldade': '🟢 Fácil',
-            'odds_min': 1.30,
-            'odds_max': 1.60,
-            'estrategia': 'Melhor custo-benefício'
-        },
-        {
-            'mercado': 'Over 2.5 FT',
-            'taxa_min': 62,
-            'taxa_max': 68,
-            'dificuldade': '🟡 Médio',
-            'odds_min': 1.70,
-            'odds_max': 2.10,
-            'estrategia': 'Buscar +5% de valor'
-        },
-        {
-            'mercado': 'Under 2.5 FT',
-            'taxa_min': 58,
-            'taxa_max': 65,
-            'dificuldade': '🟡 Médio',
-            'odds_min': 1.80,
-            'odds_max': 2.20,
-            'estrategia': 'Análise defensiva detalhada'
-        },
-        {
-            'mercado': 'BTTS',
-            'taxa_min': 63,
-            'taxa_max': 70,
-            'dificuldade': '🟡 Médio',
-            'odds_min': 1.80,
-            'odds_max': 2.20,
-            'estrategia': 'Cruzar dados ofensivos/defensivos'
-        },
-        {
-            'mercado': 'Dupla Chance',
-            'taxa_min': 60,
-            'taxa_max': 66,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 1.40,
-            'odds_max': 1.70,
-            'estrategia': 'Usar em jogos equilibrados'
-        },
-        {
-            'mercado': 'Escanteios',
-            'taxa_min': 68,
-            'taxa_max': 74,
-            'dificuldade': '🟢 Fácil',
-            'odds_min': 1.60,
-            'odds_max': 1.90,
-            'estrategia': 'Times ofensivos com estatísticas consistentes'
-        },
-        {
-            'mercado': 'Cartões',
-            'taxa_min': 65,
-            'taxa_max': 72,
-            'dificuldade': '🟡 Médio',
-            'odds_min': 1.70,
-            'odds_max': 2.00,
-            'estrategia': 'Análise de arbitragem e rivalidade'
-        },
-        {
-            'mercado': 'Handicap',
-            'taxa_min': 58,
-            'taxa_max': 64,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 1.90,
-            'odds_max': 2.50,
-            'estrategia': 'Diferença clara de força entre equipes'
-        },
-        {
-            'mercado': 'Chutes',
-            'taxa_min': 66,
-            'taxa_max': 73,
-            'dificuldade': '🟡 Médio',
-            'odds_min': 1.75,
-            'odds_max': 2.10,
-            'estrategia': 'Times com volume ofensivo alto'
-        },
-        {
-            'mercado': 'Impedimentos',
-            'taxa_min': 59,
-            'taxa_max': 66,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 1.80,
-            'odds_max': 2.30,
-            'estrategia': 'Equipes com linha avançada agressiva'
-        },
-        {
-            'mercado': 'Vitória',
-            'taxa_min': 55,
-            'taxa_max': 62,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 1.80,
-            'odds_max': 3.50,
-            'estrategia': 'Aposta de maior risco'
-        },
-        {
-            'mercado': 'Empate',
-            'taxa_min': 28,
-            'taxa_max': 35,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 3.00,
-            'odds_max': 4.00,
-            'estrategia': 'Apenas em jogos muito equilibrados'
-        },
-        {
-            'mercado': 'Derrota',
-            'taxa_min': 55,
-            'taxa_max': 62,
-            'dificuldade': '🔴 Difícil',
-            'odds_min': 1.80,
-            'odds_max': 3.50,
-            'estrategia': 'Equivalente à vitória, análise similar'
-        }
-    ]
-
-    return pd.DataFrame(mercados)
-
-
-def simular_resultados_financeiros(num_jogos=100, valor_aposta=100):
-    """
-    Simula os resultados financeiros com base nas taxas de acerto esperadas
-    """
-    # Obter dados de desempenho dos mercados
-    df_mercados = simular_desempenho_mercados()
-
+def processar_todos_jogos_completos(todas_abas, df_proximos_jogos):
+    """Processa todos os jogos com estatísticas COMPLETAS"""
     resultados = []
 
-    for _, mercado in df_mercados.iterrows():
-        # Calcular taxa média de acerto
-        taxa_media = (mercado['taxa_min'] + mercado['taxa_max']) / 2 / 100
+    if df_proximos_jogos is not None and not df_proximos_jogos.empty:
+        for _, jogo in df_proximos_jogos.iterrows():
+            try:
+                liga = jogo.get('Div', '')
+                mandante = jogo.get('HomeTeam', '')
+                visitante = jogo.get('AwayTeam', '')
+                data = jogo.get('Date', '')
 
-        # Calcular odd média
-        odd_media = (mercado['odds_min'] + mercado['odds_max']) / 2
+                if liga in todas_abas and mandante and visitante:
+                    df_liga = todas_abas[liga]
+                    prob = calcular_probabilidades_avancadas(df_liga, mandante, visitante)
 
-        # Simular jogos
-        acertos = int(num_jogos * taxa_media)
-        erros = num_jogos - acertos
+                    resultados.append({
+                        # Informações básicas
+                        'Data': data.strftime('%d/%m/%Y') if hasattr(data, 'strftime') else str(data),
+                        'Liga': mapeamento_ligas.get(liga, liga),
+                        'Casa': mandante,
+                        'Fora': visitante,
 
-        # Calcular lucro/prejuízo
-        lucro = acertos * (valor_aposta * (odd_media - 1))
-        prejuizo = erros * valor_aposta
-        resultado_financeiro = lucro - prejuizo
-        roi = (resultado_financeiro / (num_jogos * valor_aposta)) * 100
+                        # Resultados
+                        'Casa Vence': f"{prob['casa_vence']:.1f}%",
+                        'Empate': f"{prob['empate']:.1f}%",
+                        'Fora Vence': f"{prob['fora_vence']:.1f}%",
 
-        # Calcular unidades (1 unidade = valor_aposta)
-        unidades = resultado_financeiro / valor_aposta
+                        # Gols
+                        'Gols HT': f"{prob['gols_ht_total']:.2f}",
+                        'Gols FT': f"{prob['gols_ft_total']:.2f}",
 
-        resultados.append({
-            'Mercado': mercado['mercado'],
-            'Taxa Acerto': f"{taxa_media * 100:.1f}%",
-            'Odd Média': f"{odd_media:.2f}",
-            'Acertos': acertos,
-            'Erros': erros,
-            'Lucro (R$)': f"R$ {resultado_financeiro:.2f}",
-            'ROI': f"{roi:.1f}%",
-            'Unidades': f"{unidades:.1f}u",
-            'Dificuldade': mercado['dificuldade']
-        })
+                        # Mercados
+                        'Over 0.5 HT': f"{prob['over_05_ht']:.1f}%",
+                        'Over 0.5 FT': f"{prob['over_05_ft']:.1f}%",
+                        'Over 1.5 FT': f"{prob['over_15_ft']:.1f}%",
+                        'Over 2.5 FT': f"{prob['over_25_ft']:.1f}%",
+                        'Over 3.5 FT': f"{prob['over_35_ft']:.1f}%",
+                        'BTTS FT': f"{prob['btts']:.1f}%",
+
+                        # Média de gols esperada - Por equipe
+                        'Gols Casa Esp': f"{prob['gols_casa_esperados']:.2f}",
+                        'Gols Fora Esp': f"{prob['gols_fora_esperados']:.2f}",
+
+                        # Escanteios
+                        'Escanteios Casa Esp': f"{prob['escanteios_casa_esperados']:.1f}",
+                        'Escanteios Fora Esp': f"{prob['escanteios_fora_esperados']:.1f}",
+                        'Escanteios FT': f"{prob['escanteios_total_ft']:.1f}",
+
+                        # Finalizações
+                        'Finalizações Casa Esp': f"{prob['finalizacoes_casa_esperadas']:.1f}",
+                        'Finalizações Fora Esp': f"{prob['finalizacoes_fora_esperadas']:.1f}",
+                        'Finalizações FT': f"{prob['finalizacoes_total_ft']:.1f}",
+
+                        # Chutes ao gol
+                        'Chutes Gol Casa Esp': f"{prob['chutes_gol_casa_esperados']:.1f}",
+                        'Chutes Gol Fora Esp': f"{prob['chutes_gol_fora_esperados']:.1f}",
+                        'Chutes Gol FT': f"{prob['chutes_gol_total_ft']:.1f}",
+
+                        # Cartões amarelos
+                        'Cartões Casa Esp': f"{prob['cartoes_casa_esperados']:.1f}",
+                        'Cartões Fora Esp': f"{prob['cartoes_fora_esperados']:.1f}",
+                        'Cartões FT': f"{prob['cartoes_total_ft']:.1f}",
+
+                        # Impedimentos
+                        'Impedimentos FT': f"{prob['impedimentos_total_ft']:.1f}" if prob[
+                                                                                         'impedimentos_total_ft'] > 0 else "N/D"
+                    })
+            except Exception as e:
+                continue
 
     return pd.DataFrame(resultados)
 
 
-# Criar abas principais
-if todas_abas is not None and abas_disponiveis:
-    nomes_abas = ["🎯 Simulador", "📊 Relatórios Liga", "👥 Análise por Time", "🔍 Buscar Equipe"]
-    nomes_abas.extend([mapeamento_ligas.get(aba, f"{aba} (Liga)") for aba in abas_disponiveis])
-    tabs = st.tabs(nomes_abas)
+# FUNÇÕES PARA DICAS INTELIGENTES MELHORADAS
+def gerar_dicas_inteligentes(df_proximos_jogos, todas_abas):
+    """Gera dicas inteligentes baseadas nos últimos 5 jogos"""
 
-    # ABA 1: SIMULADOR
-    with tabs[0]:
-        st.header("🏆 Simulador de Apostas - Análise de Probabilidades")
+    dicas_todas = []
 
-        # Botão de atualização simplificado e mais bonito
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("🔄 ATUALIZAR DADOS AGORA", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
+    if df_proximos_jogos is None or todas_abas is None:
+        return []
 
-        if df_proximos_jogos is not None and not df_proximos_jogos.empty:
-            colunas_desejadas = ['Div', 'Date', 'HomeTeam', 'AwayTeam', 'B365H', 'B365D', 'B365A', 'B365>2.5',
-                                 'B365<2.5']
-            colunas_existentes = [col for col in colunas_desejadas if col in df_proximos_jogos.columns]
-            df_simulador = df_proximos_jogos[colunas_existentes].copy()
+    for _, jogo in df_proximos_jogos.iterrows():
+        try:
+            liga = jogo.get('Div', '')
+            mandante = jogo.get('HomeTeam', '')
+            visitante = jogo.get('AwayTeam', '')
 
-            if 'Date' in df_simulador.columns:
-                df_simulador['Date'] = pd.to_datetime(df_simulador['Date'], errors='coerce')
-                df_simulador['Date'] = df_simulador['Date'].dt.strftime('%d/%m/%Y')
+            if liga in todas_abas and mandante and visitante:
+                df_liga = todas_abas[liga]
 
-            df_simulador = df_simulador.rename(
-                columns={'Div': 'Liga', 'Date': 'Data', 'HomeTeam': 'Mandante', 'AwayTeam': 'Visitante'})
-            df_simulador['Liga'] = df_simulador['Liga'].map(mapeamento_ligas).fillna(df_simulador['Liga'])
+                # Analisar mandante
+                dicas_mandante = analisar_equipe_dicas(df_liga, mandante)
+                # Analisar visitante
+                dicas_visitante = analisar_equipe_dicas(df_liga, visitante)
 
-            if 'B365H' in df_simulador.columns:
-                df_simulador['Vitória'] = df_simulador['B365H'].apply(calcular_probabilidades)
-            if 'B365D' in df_simulador.columns:
-                df_simulador['Empate'] = df_simulador['B365D'].apply(calcular_probabilidades)
-            if 'B365A' in df_simulador.columns:
-                df_simulador['Derrota'] = df_simulador['B365A'].apply(calcular_probabilidades)
-            if 'B365>2.5' in df_simulador.columns:
-                df_simulador['Over 2.5 FT'] = df_simulador['B365>2.5'].apply(calcular_probabilidades)
-            if 'B365<2.5' in df_simulador.columns:
-                df_simulador['Under 2.5 FT'] = df_simulador['B365<2.5'].apply(calcular_probabilidades)
+                # Combinar dicas
+                dicas_jogo = dicas_mandante + dicas_visitante
 
-            colunas_probabilidades = ['Vitória', 'Empate', 'Derrota', 'Over 2.5 FT', 'Under 2.5 FT']
-            for coluna in colunas_probabilidades:
-                if coluna in df_simulador.columns:
-                    df_simulador[coluna] = df_simulador[coluna].apply(formatar_probabilidade)
+                for dica in dicas_jogo:
+                    dicas_todas.append({
+                        'Jogo': f"{mandante} x {visitante}",
+                        'Liga': mapeamento_ligas.get(liga, liga),
+                        'Dica': dica
+                    })
 
-            colunas_ordenadas = ['Data', 'Liga', 'Mandante', 'Visitante']
-            for coluna in colunas_probabilidades:
-                if coluna in df_simulador.columns:
-                    colunas_ordenadas.append(coluna)
+        except Exception as e:
+            continue
 
-            colunas_odds_originais = ['B365H', 'B365D', 'B365A', 'B365>2.5', 'B365<2.5']
-            for coluna in colunas_odds_originais:
-                if coluna in df_simulador.columns:
-                    colunas_ordenadas.append(coluna)
+    return dicas_todas
 
-            df_simulador = df_simulador[colunas_ordenadas]
 
-            if 'Data' in df_simulador.columns:
-                df_simulador['Data_Ordenacao'] = pd.to_datetime(df_simulador['Data'], format='%d/%m/%Y',
-                                                                errors='coerce')
-                df_simulador = df_simulador.sort_values('Data_Ordenacao')
-                df_simulador = df_simulador.drop('Data_Ordenacao', axis=1)
+def analisar_equipe_dicas(df_liga, time):
+    """Analisa uma equipe específica e retorna dicas inteligentes"""
 
-            # Filtros
-            st.subheader("🔍 Filtros")
-            col1, col2 = st.columns(2)
-            with col1:
-                ligas_disponiveis = sorted(df_simulador['Liga'].unique())
-                liga_filtro = st.selectbox("Filtrar por liga:", ["Todas as Ligas"] + list(ligas_disponiveis))
-            with col2:
-                if 'Data' in df_simulador.columns:
-                    datas_disponiveis = sorted(df_simulador['Data'].unique())
-                    if datas_disponiveis:
-                        data_filtro = st.selectbox("Filtrar por data:", ["Todas as Datas"] + list(datas_disponiveis))
+    dicas = []
 
-            df_filtrado = df_simulador.copy()
-            if liga_filtro != "Todas as Ligas":
-                df_filtrado = df_filtrado[df_filtrado['Liga'] == liga_filtro]
-            if 'Data' in df_filtrado.columns and 'data_filtro' in locals() and data_filtro != "Todas as Datas":
-                df_filtrado = df_filtrado[df_filtrado['Data'] == data_filtro]
+    # Obter últimos 5 jogos
+    ultimos_5 = obter_ultimos_jogos_por_cenario(df_liga, time, 'geral', 5)
 
-            # Exibir jogos com probabilidades visíveis
-            st.subheader("⚡️ Jogos da Rodada ⚡️ ")
-            st.info(f"📊 **{len(df_filtrado)} jogos encontrados**")
+    if ultimos_5.empty or len(ultimos_5) < 5:
+        return dicas
 
-            for idx, jogo in df_filtrado.iterrows():
-                codigo_liga = None
-                for codigo, nome in mapeamento_ligas.items():
-                    if nome == jogo['Liga']:
-                        codigo_liga = codigo
-                        break
+    # Dicas de Gols HT
+    dicas.extend(analisar_gols_ht_melhorado(ultimos_5, time))
 
-                # Extrair valores numéricos das probabilidades para exibição rápida
-                vitoria_valor = float(jogo.get('Vitória', '0%').replace('%', '')) if 'Vitória' in jogo and pd.notna(
-                    jogo['Vitória']) else 0
-                empate_valor = float(jogo.get('Empate', '0%').replace('%', '')) if 'Empate' in jogo and pd.notna(
-                    jogo['Empate']) else 0
-                derrota_valor = float(jogo.get('Derrota', '0%').replace('%', '')) if 'Derrota' in jogo and pd.notna(
-                    jogo['Derrota']) else 0
-                over_valor = float(
-                    jogo.get('Over 2.5 FT', '0%').replace('%', '')) if 'Over 2.5 FT' in jogo and pd.notna(
-                    jogo['Over 2.5 FT']) else 0
-                under_valor = float(
-                    jogo.get('Under 2.5 FT', '0%').replace('%', '')) if 'Under 2.5 FT' in jogo and pd.notna(
-                    jogo['Under 2.5 FT']) else 0
+    # Dicas de Gols FT
+    dicas.extend(analisar_gols_ft_melhorado(ultimos_5, time))
 
-                # Criar título com todas as probabilidades visíveis
-                titulo_jogo = f"🏟️ {jogo['Mandante']} vs {jogo['Visitante']} - {jogo['Liga']} - {jogo['Data']}"
-                titulo_probabilidades = f"   ✅ {vitoria_valor:.0f}% | 🟰 {empate_valor:.0f}% | ❌ {derrota_valor:.0f}% | ⚽ Over {over_valor:.0f}% | 🛡️ Under {under_valor:.0f}%"
+    # Dicas de BTTS
+    dicas.extend(analisar_btts_melhorado(ultimos_5, time))
 
-                with st.expander(f"{titulo_jogo}{titulo_probabilidades}"):
-                    # Manter apenas a comparação detalhada dentro do expander
-                    st.markdown("---")
-                    st.subheader("📊 Comparação dos Últimos 5 Jogos")
+    # Dicas de Escanteios
+    dicas.extend(analisar_escanteios_melhorado(ultimos_5, time))
 
-                    if codigo_liga and codigo_liga in todas_abas:
-                        df_liga = todas_abas[codigo_liga]
-                        stats_mandante = calcular_estatisticas_ultimos_5_jogos(df_liga, jogo['Mandante'])
-                        stats_visitante = calcular_estatisticas_ultimos_5_jogos(df_liga, jogo['Visitante'])
+    # Dicas de Cartões
+    dicas.extend(analisar_cartoes_melhorado(ultimos_5, time))
 
-                        if stats_mandante and stats_visitante:
-                            # Preparar dados para tabela comparativa
-                            dados_mandante = {}
-                            dados_visitante = {}
+    # Dicas de Finalizações
+    dicas.extend(analisar_finalizacoes_melhorado(ultimos_5, time))
 
-                            # Estatísticas básicas
-                            dados_mandante['Jogos'] = f"{stats_mandante['jogos_analisados']}"
-                            dados_visitante['Jogos'] = f"{stats_visitante['jogos_analisados']}"
+    # Dicas de Chutes ao Gol
+    dicas.extend(analisar_chutes_gol_melhorado(ultimos_5, time))
 
-                            percentuais = [
-                                ('Jogos 0.5 HT', stats_mandante['over_05_ht'], stats_visitante['over_05_ht']),
-                                ('Jogos 0.5 FT', stats_mandante['over_05_ft'], stats_visitante['over_05_ft']),
-                                ('Jogos 1.5 FT', stats_mandante['over_15_ft'], stats_visitante['over_15_ft']),
-                                ('Jogos 2.5 FT', stats_mandante['over_25_ft'], stats_visitante['over_25_ft']),
-                                ('Jogos BTTS', stats_mandante['btts'], stats_visitante['btts']),
-                                ('Vitórias', stats_mandante['vitorias'], stats_visitante['vitorias']),
-                                ('Empates', stats_mandante['empates'], stats_visitante['empates']),
-                                ('Derrotas', stats_mandante['derrotas'], stats_visitante['derrotas'])
-                            ]
+    # Dicas de Impedimentos
+    dicas.extend(analisar_impedimentos_melhorado(ultimos_5, time))
 
-                            for nome, mandante_val, visitante_val in percentuais:
-                                percent_mandante = (mandante_val / stats_mandante['jogos_analisados'] * 100) if \
-                                stats_mandante['jogos_analisados'] > 0 else 0
-                                percent_visitante = (visitante_val / stats_visitante['jogos_analisados'] * 100) if \
-                                stats_visitante['jogos_analisados'] > 0 else 0
+    return dicas
 
-                                dados_mandante[
-                                    nome] = f"{obter_cor_percentual(percent_mandante)} {mandante_val}/{stats_mandante['jogos_analisados']} ({percent_mandante:.0f}%)"
-                                dados_visitante[
-                                    nome] = f"{obter_cor_percentual(percent_visitante)} {visitante_val}/{stats_visitante['jogos_analisados']} ({percent_visitante:.0f}%)"
 
-                            # Médias de gols
-                            medias = [
-                                ('Média de Gols Marcados HT', stats_mandante['media_gols_marcados_ht'],
-                                 stats_visitante['media_gols_marcados_ht']),
-                                ('Média de Gols Sofridos HT', stats_mandante['media_gols_sofridos_ht'],
-                                 stats_visitante['media_gols_sofridos_ht']),
-                                ('Média Total HT (Marcados + Sofridos)', stats_mandante['media_ht'],
-                                 stats_visitante['media_ht']),
-                                ('Média de Gols Marcados FT', stats_mandante['media_gols_marcados_ft'],
-                                 stats_visitante['media_gols_marcados_ft']),
-                                ('Média de Gols Sofridos FT', stats_mandante['media_gols_sofridos_ft'],
-                                 stats_visitante['media_gols_sofridos_ft']),
-                                ('Média Total FT (Marcados + Sofridos)', stats_mandante['media_ft'],
-                                 stats_visitante['media_ft'])
-                            ]
+def analisar_gols_ht_melhorado(jogos, time):
+    """Analisa estatísticas de gols no primeiro tempo - formato melhorado"""
+    dicas = []
 
-                            for nome, mandante_val, visitante_val in medias:
-                                dados_mandante[nome] = f"{mandante_val:.2f}"
-                                dados_visitante[nome] = f"{visitante_val:.2f}"
+    jogos_com_gol_ht = 0
+    valores_gols_ht = []
 
-                            # Sequências
-                            sequencias = [
-                                ('Chutes no Gol (últimos 5)', stats_mandante['chutes_gol'],
-                                 stats_visitante['chutes_gol']),
-                                ('Chutes Totais (últimos 5)', stats_mandante['chutes'], stats_visitante['chutes']),
-                                ('Escanteios a favor (últimos 5)', stats_mandante['escanteios_favor'],
-                                 stats_visitante['escanteios_favor']),
-                                ('Escanteios por jogo (total)', [a + b for a, b in
-                                                                 zip(stats_mandante['escanteios_favor'],
-                                                                     stats_mandante['escanteios_contra'])],
-                                 [a + b for a, b in
-                                  zip(stats_visitante['escanteios_favor'], stats_visitante['escanteios_contra'])]),
-                                ('Cartões amarelos a favor (últimos 5)', stats_mandante['amarelos_favor'],
-                                 stats_visitante['amarelos_favor']),
-                                ('Cartões amarelos por jogo (total)', [a + b for a, b in
-                                                                       zip(stats_mandante['amarelos_favor'],
-                                                                           stats_mandante['amarelos_contra'])],
-                                 [a + b for a, b in
-                                  zip(stats_visitante['amarelos_favor'], stats_visitante['amarelos_contra'])]),
-                                ('Faltas a favor (últimos 5)', stats_mandante['faltas_favor'],
-                                 stats_visitante['faltas_favor']),
-                                ('Faltas por jogo (total)', [a + b for a, b in zip(stats_mandante['faltas_favor'],
-                                                                                   stats_mandante['faltas_contra'])],
-                                 [a + b for a, b in
-                                  zip(stats_visitante['faltas_favor'], stats_visitante['faltas_contra'])])
-                            ]
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            gols_time_ht = jogo.get('HTHG', 0)
+            gols_adversario_ht = jogo.get('HTAG', 0)
+        else:
+            gols_time_ht = jogo.get('HTAG', 0)
+            gols_adversario_ht = jogo.get('HTHG', 0)
 
-                            for nome, mandante_seq, visitante_seq in sequencias:
-                                dados_mandante[nome] = ' - '.join(map(str, mandante_seq))
-                                dados_visitante[nome] = ' - '.join(map(str, visitante_seq))
+        total_gols_ht = gols_time_ht + gols_adversario_ht
+        valores_gols_ht.append(total_gols_ht)
 
-                            # Impedimentos (se disponíveis)
-                            if stats_mandante['impedimentos_favor'] and stats_visitante['impedimentos_favor']:
-                                dados_mandante['Impedimentos a favor (últimos 5)'] = ' - '.join(
-                                    map(str, stats_mandante['impedimentos_favor']))
-                                dados_visitante['Impedimentos a favor (últimos 5)'] = ' - '.join(
-                                    map(str, stats_visitante['impedimentos_favor']))
+        if total_gols_ht > 0.5:
+            jogos_com_gol_ht += 1
 
-                                dados_mandante['Impedimentos por jogo (total)'] = ' - '.join([str(a + b) for a, b in
-                                                                                              zip(stats_mandante[
-                                                                                                      'impedimentos_favor'],
-                                                                                                  stats_mandante[
-                                                                                                      'impedimentos_contra'])])
-                                dados_visitante['Impedimentos por jogo (total)'] = ' - '.join([str(a + b) for a, b in
-                                                                                               zip(stats_visitante[
-                                                                                                       'impedimentos_favor'],
-                                                                                                   stats_visitante[
-                                                                                                       'impedimentos_contra'])])
+    # Dica: Sequência de gols HT
+    if jogos_com_gol_ht >= 4:
+        dicas.append(f"O {time} teve {jogos_com_gol_ht} dos seus últimos 5 jogos com 0.5 Gols HT.")
 
-                            # Criar tabela comparativa
-                            categorias = list(dados_mandante.keys())
-                            tabela_comparativa = pd.DataFrame({
-                                'Categoria': categorias,
-                                jogo['Mandante']: [dados_mandante[cat] for cat in categorias],
-                                jogo['Visitante']: [dados_visitante[cat] for cat in categorias]
-                            })
+    return dicas
 
-                            # Exibir tabela
-                            st.dataframe(
-                                tabela_comparativa,
-                                use_container_width=True,
-                                hide_index=True,
-                                column_config={
-                                    "Categoria": st.column_config.Column(width="large"),
-                                    jogo['Mandante']: st.column_config.Column(width="medium"),
-                                    jogo['Visitante']: st.column_config.Column(width="medium")
-                                }
-                            )
 
-                            # Análise de probabilidades e dicas
-                            analise = analisar_probabilidades_partida(df_liga, jogo['Mandante'], jogo['Visitante'])
+def analisar_gols_ft_melhorado(jogos, time):
+    """Analisa estatísticas de gols no tempo completo - formato melhorado"""
+    dicas = []
 
-                            if analise:
-                                pontuacao = calcular_pontuacao_confiança(analise)
+    jogos_over_15 = 0
+    jogos_over_25 = 0
+    jogos_over_35 = 0
 
-                                # Exibir pontuação de confiança
-                                st.subheader("📈 NÍVEL DE CONFIANÇA DAS RECOMENDAÇÕES")
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            gols_time_ft = jogo.get('FTHG', 0)
+            gols_adversario_ft = jogo.get('FTAG', 0)
+        else:
+            gols_time_ft = jogo.get('FTAG', 0)
+            gols_adversario_ft = jogo.get('FTHG', 0)
 
-                                if pontuacao >= 80:
-                                    st.success(f"🎯 CONFIANÇA ALTA: {pontuacao}%")
-                                elif pontuacao >= 60:
-                                    st.warning(f"⚠️ CONFIANÇA MÉDIA: {pontuacao}%")
-                                else:
-                                    st.error(f"🔴 CONFIANÇA BAIXA: {pontuacao}%")
+        total_gols_ft = gols_time_ft + gols_adversario_ft
 
-                                # Barra de progresso para confiança
-                                st.progress(pontuacao / 100)
+        if total_gols_ft > 1.5:
+            jogos_over_15 += 1
+        if total_gols_ft > 2.5:
+            jogos_over_25 += 1
+        if total_gols_ft > 3.5:
+            jogos_over_35 += 1
 
-                                st.subheader("🎯 DICAS INTELIGENTES PARA ESTA PARTIDA")
+    # Dicas Over
+    if jogos_over_15 >= 4:
+        dicas.append(f"O {time} teve {jogos_over_15} dos seus últimos 5 jogos com 1.5 Gols FT.")
+    if jogos_over_25 >= 3:
+        dicas.append(f"O {time} teve {jogos_over_25} dos seus últimos 5 jogos com 2.5 Gols FT.")
+    if jogos_over_35 >= 2:
+        dicas.append(f"O {time} teve {jogos_over_35} dos seus últimos 5 jogos com 3.5 Gols FT.")
 
-                                # Exibir dicas
-                                for dica in analise['dicas']:
-                                    st.success(dica)
+    return dicas
 
-                                # Exibir probabilidades em cards
-                                st.subheader("📊 PROBABILIDADES COMBINADAS")
 
-                                col1, col2, col3, col4 = st.columns(4)
+def analisar_btts_melhorado(jogos, time):
+    """Analisa estatísticas de BTTS - formato melhorado"""
+    dicas = []
 
-                                with col1:
-                                    st.metric("Over 0.5 HT", f"{analise['probabilidades']['over_05_ht']:.1f}%")
-                                with col2:
-                                    st.metric("Over 1.5 FT", f"{analise['probabilidades']['over_15_ft']:.1f}%")
-                                with col3:
-                                    st.metric("Over 2.5 FT", f"{analise['probabilidades']['over_25_ft']:.1f}%")
-                                with col4:
-                                    st.metric("BTTS", f"{analise['probabilidades']['btts']:.1f}%")
+    jogos_btts = 0
 
-                                # Exibir médias
-                                st.subheader("⚖️ MÉDIAS COMBINADAS")
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            gols_time = jogo.get('FTHG', 0)
+            gols_adversario = jogo.get('FTAG', 0)
+        else:
+            gols_time = jogo.get('FTAG', 0)
+            gols_adversario = jogo.get('FTHG', 0)
 
-                                col1, col2, col3, col4 = st.columns(4)
+        if gols_time > 0 and gols_adversario > 0:
+            jogos_btts += 1
 
-                                with col1:
-                                    st.metric("Gols Marcados", f"{analise['medias']['gols_marcados']:.2f}")
-                                with col2:
-                                    st.metric("Gols Sofridos", f"{analise['medias']['gols_sofridos']:.2f}")
-                                with col3:
-                                    st.metric("Total de Gols", f"{analise['medias']['total_gols']:.2f}")
-                                with col4:
-                                    st.metric("Escanteios", f"{analise['medias']['escanteios']:.2f}")
+    # Dica BTTS
+    if jogos_btts >= 3:
+        dicas.append(f"O {time} teve {jogos_btts} dos seus últimos 5 jogos com BTTS FT.")
 
-                            # Adicionar uma nova seção para simulação de resultados
-                            with st.expander("📈 SIMULAÇÃO DE DESEMPENHO POR MERCADO"):
-                                st.subheader("🎯 TAXAS DE ACERTO POR MERCADO")
+    return dicas
 
-                                df_mercados = simular_desempenho_mercados()
-                                st.dataframe(df_mercados, use_container_width=True, hide_index=True)
 
-                                st.subheader("💰 SIMULAÇÃO FINANCEIRA (100 jogos, R$ 100 por aposta)")
+def analisar_escanteios_melhorado(jogos, time):
+    """Analisa estatísticas de escanteios - formato melhorado"""
+    dicas = []
 
-                                df_resultados = simular_resultados_financeiros(100, 100)
-                                st.dataframe(df_resultados, use_container_width=True, hide_index=True)
+    escanteios_jogos = []
+    jogos_10_escanteios = 0
 
-                                # Gráfico de ROI por mercado (com tratamento de erro)
-                                limpar_figuras()  # Limpar figuras antes de criar novas
-                                fig, ax = criar_grafico_seguro()
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            escanteios_time = jogo.get('HC', 0)
+            escanteios_adversario = jogo.get('AC', 0)
+        else:
+            escanteios_time = jogo.get('AC', 0)
+            escanteios_adversario = jogo.get('HC', 0)
 
-                                if fig and ax:
-                                    try:
-                                        rois = [float(r['ROI'].replace('%', '')) for _, r in df_resultados.iterrows()]
-                                        mercados = df_resultados['Mercado']
+        total_escanteios = escanteios_time + escanteios_adversario
+        escanteios_jogos.append(total_escanteios)
 
-                                        bars = ax.barh(mercados, rois,
-                                                       color=['green' if roi >= 0 else 'red' for roi in rois])
-                                        ax.set_xlabel('ROI (%)')
-                                        ax.set_title('Retorno sobre Investimento por Mercado')
+        if total_escanteios >= 10:
+            jogos_10_escanteios += 1
 
-                                        for i, bar in enumerate(bars):
-                                            width = bar.get_width()
-                                            ax.text(width + (0.5 if width >= 0 else -1.5),
-                                                    bar.get_y() + bar.get_height() / 2,
-                                                    f'{rois[i]:.1f}%', ha='left' if width >= 0 else 'right',
-                                                    va='center')
+    # Dica escanteios
+    if jogos_10_escanteios >= 3:
+        dicas.append(f"O {time} teve {jogos_10_escanteios} dos seus últimos 5 jogos com >= 10 Escanteios FT.")
 
-                                        st.pyplot(fig)
-                                    except Exception as e:
-                                        st.error(f"Erro ao criar gráfico: {e}")
-                                    finally:
-                                        plt.close(fig)  # Garantir que a figura seja fechada
-                        else:
-                            st.warning("Dados insuficientes para análise detalhada")
-                    else:
-                        st.warning("Dados da liga não disponíveis para análise")
-            # Estatísticas e download
-            st.subheader("📊 Estatísticas")
-            col1, col2, col3, col4, col5 = st.columns(5)
-            with col1:
-                st.metric("Total de Jogos", len(df_filtrado))
-            with col2:
-                st.metric("Ligas Diferentes", df_filtrado['Liga'].nunique())
-            with col3:
-                if 'Data' in df_filtrado.columns:
-                    dias = df_filtrado['Data'].nunique()
-                    st.metric("Dias com Jogos", dias)
+    # Dica média alta
+    if sum(escanteios_jogos) / 5 >= 11:
+        valores_str = "-".join(map(str, escanteios_jogos))
+        dicas.append(
+            f"O {time} teve {sum(escanteios_jogos) / 5:.1f}+ Escanteios FT em média nos últimos 5 jogos. ({valores_str})")
 
-            st.subheader("💾 Exportar Dados")
+    return dicas
+
+
+def analisar_cartoes_melhorado(jogos, time):
+    """Analisa estatísticas de cartões - formato melhorado"""
+    dicas = []
+
+    cartoes_jogos = []
+    jogos_25_cartoes = 0
+
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            cartoes_time = jogo.get('HY', 0)
+            cartoes_adversario = jogo.get('AY', 0)
+        else:
+            cartoes_time = jogo.get('AY', 0)
+            cartoes_adversario = jogo.get('HY', 0)
+
+        total_cartoes = cartoes_time + cartoes_adversario
+        cartoes_jogos.append(total_cartoes)
+
+        if total_cartoes >= 2.5:
+            jogos_25_cartoes += 1
+
+    # Dica cartões
+    if jogos_25_cartoes >= 3:
+        dicas.append(f"O {time} teve {jogos_25_cartoes} dos seus últimos 5 jogos com >= 2.5 Cartões Amarelos FT.")
+
+    return dicas
+
+
+def analisar_finalizacoes_melhorado(jogos, time):
+    """Analisa estatísticas de finalizações - formato melhorado"""
+    dicas = []
+
+    finalizacoes_jogos = []
+
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            finalizacoes = jogo.get('HS', 0)
+        else:
+            finalizacoes = jogo.get('AS', 0)
+
+        finalizacoes_jogos.append(finalizacoes)
+
+    # Dica finalizações altas
+    if sum(finalizacoes_jogos) / 5 >= 12:
+        valores_str = "-".join(map(str, finalizacoes_jogos))
+        dicas.append(f"O {time} teve 12+ Finalizações na partida nos seus últimos 5 jogos. ({valores_str})")
+
+    return dicas
+
+
+def analisar_chutes_gol_melhorado(jogos, time):
+    """Analisa estatísticas de chutes ao gol - formato melhorado"""
+    dicas = []
+
+    chutes_gol_jogos = []
+
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            chutes_gol = jogo.get('HST', 0)
+        else:
+            chutes_gol = jogo.get('AST', 0)
+
+        chutes_gol_jogos.append(chutes_gol)
+
+    # Dica chutes ao gol altos
+    if sum(chutes_gol_jogos) / 5 >= 5:
+        valores_str = "-".join(map(str, chutes_gol_jogos))
+        dicas.append(f"O {time} teve 5+ Chutes ao Gol na partida nos seus últimos 5 jogos. ({valores_str})")
+
+    return dicas
+
+
+def analisar_impedimentos_melhorado(jogos, time):
+    """Analisa estatísticas de impedimentos - formato melhorado"""
+    dicas = []
+
+    impedimentos_jogos = []
+
+    for _, jogo in jogos.iterrows():
+        if jogo['HomeTeam'] == time:
+            if 'HI' in jogo:
+                impedimentos = jogo.get('HI', 0)
+                impedimentos_jogos.append(impedimentos)
+        else:
+            if 'AI' in jogo:
+                impedimentos = jogo.get('AI', 0)
+                impedimentos_jogos.append(impedimentos)
+
+    # Só gerar dica if tiver dados de impedimentos
+    if len(impedimentos_jogos) >= 3:
+        if sum(impedimentos_jogos) / len(impedimentos_jogos) >= 3:
+            valores_str = "-".join(map(str, impedimentos_jogos))
+            dicas.append(f"O {time} teve 3+ Impedimentos FT em média nos últimos jogos. ({valores_str})")
+
+    return dicas
+
+
+# FUNÇÕES PARA FILTROS EM TODAS AS COLUNAS
+def criar_filtros_para_todas_colunas(df):
+    """Cria filtros para TODAS as colunas da tabela"""
+
+    st.sidebar.header("🔍 Filtros Avançados - Todas as Colunas")
+
+    df_filtrado = df.copy()
+
+    # Criar abas para organizar os filtros
+    tab1, tab2, tab3 = st.sidebar.tabs(["📋 Informações Básicas", "⚽ Resultados & Gols", "📊 Estatísticas Avançadas"])
+
+    with tab1:
+        st.markdown('<div class="filtro-header">Informações Básicas</div>', unsafe_allow_html=True)
+
+        # Filtro Data
+        if 'Data' in df.columns:
+            datas = sorted(df['Data'].unique())
+            selected_datas = st.multiselect(
+                "Data:",
+                options=datas,
+                default=datas,
+                help="Filtrar por data dos jogos"
+            )
+            df_filtrado = df_filtrado[df_filtrado['Data'].isin(selected_datas)]
+
+        # Filtro Liga
+        if 'Liga' in df.columns:
+            ligas = sorted(df['Liga'].unique())
+            selected_ligas = st.multiselect(
+                "Liga:",
+                options=ligas,
+                default=ligas,
+                help="Filtrar por liga"
+            )
+            df_filtrado = df_filtrado[df_filtrado['Liga'].isin(selected_ligas)]
+
+        # Filtro Time Casa
+        if 'Casa' in df.columns:
+            times_casa = sorted(df['Casa'].unique())
+            selected_times_casa = st.multiselect(
+                "Time da Casa:",
+                options=times_casa,
+                default=times_casa,
+                help="Filtrar por time mandante"
+            )
+            df_filtrado = df_filtrado[df_filtrado['Casa'].isin(selected_times_casa)]
+
+        # Filtro Time Fora
+        if 'Fora' in df.columns:
+            times_fora = sorted(df['Fora'].unique())
+            selected_times_fora = st.multiselect(
+                "Time Visitante:",
+                options=times_fora,
+                default=times_fora,
+                help="Filtrar por time visitante"
+            )
+            df_filtrado = df_filtrado[df_filtrado['Fora'].isin(selected_times_fora)]
+
+    with tab2:
+        st.markdown('<div class="filtro-header">Resultados & Gols</div>', unsafe_allow_html=True)
+
+        # Filtros para probabilidades
+        colunas_probabilidades = ['Casa Vence', 'Empate', 'Fora Vence', 'Over 0.5 HT', 'Over 0.5 FT',
+                                  'Over 1.5 FT', 'Over 2.5 FT', 'Over 3.5 FT', 'BTTS FT']
+
+        for coluna in colunas_probabilidades:
+            if coluna in df.columns:
+                # Converter para numérico
+                df_filtrado[f'{coluna}_num'] = df_filtrado[coluna].str.replace('%', '').astype(float)
+
+                min_val, max_val = st.slider(
+                    f"{coluna}:",
+                    min_value=0.0,
+                    max_value=100.0,
+                    value=(0.0, 100.0),
+                    step=1.0,
+                    help=f"Filtrar por {coluna}"
+                )
+                df_filtrado = df_filtrado[
+                    (df_filtrado[f'{coluna}_num'] >= min_val) &
+                    (df_filtrado[f'{coluna}_num'] <= max_val)
+                    ]
+
+        # Filtros para gols
+        colunas_gols = ['Gols HT', 'Gols FT', 'Gols Casa Esp', 'Gols Fora Esp']
+
+        for coluna in colunas_gols:
+            if coluna in df.columns:
+                min_val, max_val = st.slider(
+                    f"{coluna}:",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=(0.0, 10.0),
+                    step=0.1,
+                    help=f"Filtrar por {coluna}"
+                )
+                df_filtrado = df_filtrado[
+                    (df_filtrado[coluna].astype(float) >= min_val) &
+                    (df_filtrado[coluna].astype(float) <= max_val)
+                    ]
+
+    with tab3:
+        st.markdown('<div class="filtro-header">Estatísticas Avançadas</div>', unsafe_allow_html=True)
+
+        # Filtros para estatísticas avançadas
+        colunas_estatisticas = [
+            'Escanteios Casa Esp', 'Escanteios Fora Esp', 'Escanteios FT',
+            'Finalizações Casa Esp', 'Finalizações Fora Esp', 'Finalizações FT',
+            'Chutes Gol Casa Esp', 'Chutes Gol Fora Esp', 'Chutes Gol FT',
+            'Cartões Casa Esp', 'Cartões Fora Esp', 'Cartões FT'
+        ]
+
+        for coluna in colunas_estatisticas:
+            if coluna in df.columns and coluna != 'Impedimentos FT':  # Excluir impedimentos que pode ter "N/D"
+                min_val, max_val = st.slider(
+                    f"{coluna}:",
+                    min_value=0.0,
+                    max_value=20.0,
+                    value=(0.0, 20.0),
+                    step=0.5,
+                    help=f"Filtrar por {coluna}"
+                )
+                df_filtrado = df_filtrado[
+                    (df_filtrado[coluna].astype(float) >= min_val) &
+                    (df_filtrado[coluna].astype(float) <= max_val)
+                    ]
+
+    # Remover colunas numéricas temporárias
+    for coluna in df.columns:
+        if f'{coluna}_num' in df_filtrado.columns:
+            df_filtrado = df_filtrado.drop(f'{coluna}_num', axis=1)
+
+    return df_filtrado
+
+
+# Interface principal
+st.markdown('<h1 class="main-header">💀 FutAlgorithm - Software Esportivo</h1>', unsafe_allow_html=True)
+st.markdown('<p class="citacao">⚰️ In Memoriam – Denise Bet365..</p>', unsafe_allow_html=True)
+st.markdown("---")
+
+# Criar abas
+tab_titles = ["⚽️ Simulador", "⚡️ Dicas Inteligentes"]
+tabs = st.tabs(tab_titles)
+
+# Aba 1: Simulador
+with tabs[0]:
+    st.header("⚡️ Programador | FutAlgorithm ®️")
+
+    if todas_abas and df_proximos_jogos is not None:
+        with st.spinner('🔍 Calculando probabilidades COMPLETAS...'):
+            df_resultados = processar_todos_jogos_completos(todas_abas, df_proximos_jogos)
+
+        if not df_resultados.empty:
+            st.success(f"⭐️ Busca Concluída! {len(df_resultados)} Jogos Encontrados")
+
+            # Aplicar filtros em TODAS as colunas
+            df_filtrado = criar_filtros_para_todas_colunas(df_resultados)
+
+            # Exibir estatísticas dos filtros
+            st.info(f"🔷 Exibindo {len(df_filtrado)} de {len(df_resultados)} Jogos Após Filtros")
+
+            # Exibir tabela completa com TODAS as colunas
+            st.dataframe(df_filtrado, use_container_width=True, height=600)
+
+            # Botão de download
             csv = df_filtrado.to_csv(index=False, sep=';')
             st.download_button(
                 label="📥 Download CSV",
                 data=csv,
-                file_name="simulador_apostas.csv",
-                mime="text/csv",
-                key="download_simulador"
+                file_name="futalgorithm_previsoes.csv",
+                mime="text/csv"
             )
-        else:
-            st.warning("⚠️ Não há dados disponíveis para simulação")
 
-else:
-    st.error("❌ Não foi possível carregar os dados")
+        else:
+            st.warning("⚠️ Nenhum jogo pôde ser processado. Verifique os dados.")
+    else:
+        st.error("❌ Dados não disponíveis para análise")
+
+# Aba 2: Dicas Inteligentes
+with tabs[1]:
+    st.header("💡 Dicas Inteligentes - Análise por Partida")
+
+    if todas_abas and df_proximos_jogos is not None:
+        with st.spinner('🔍 Analisando estatísticas dos últimos 5 jogos...'):
+            dicas = gerar_dicas_inteligentes(df_proximos_jogos, todas_abas)
+
+        if dicas:
+            st.success(f"✅ {len(dicas)} dicas inteligentes encontradas!")
+
+            # Filtros
+            col1, col2 = st.columns(2)
+            with col1:
+                liga_filtro = st.selectbox("Filtrar por Liga:",
+                                           ["Todas"] + list(set([d['Liga'] for d in dicas])))
+            with col2:
+                times_unicos = list(
+                    set([d['Jogo'].split(' x ')[0] for d in dicas] + [d['Jogo'].split(' x ')[1] for d in dicas]))
+                time_filtro = st.selectbox("Filtrar por Time:", ["Todos"] + times_unicos)
+
+            # Aplicar filtros
+            dicas_filtradas = dicas
+            if liga_filtro != "Todas":
+                dicas_filtradas = [d for d in dicas_filtradas if d['Liga'] == liga_filtro]
+            if time_filtro != "Todos":
+                dicas_filtradas = [d for d in dicas_filtradas if time_filtro in d['Jogo']]
+
+            # Exibir dicas
+            st.subheader(f"🎯 {len(dicas_filtradas)} Dicas Filtradas")
+
+            for dica in dicas_filtradas:
+                st.markdown(f"""
+                <div class="dica-item">
+                    <div class="dica-header">{dica['Jogo']} - {dica['Liga']}</div>
+                    <div class="dica-content">{dica['Dica']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Estatísticas das dicas
+            st.subheader("📈 Estatísticas das Dicas")
+            col1, col2, col3 = st.columns(3)
+
+            total_dicas = len(dicas_filtradas)
+            if total_dicas > 0:
+                dicas_por_liga = pd.DataFrame(dicas_filtradas)['Liga'].value_counts()
+
+                col1.metric("Total de Dicas", total_dicas)
+                if not dicas_por_liga.empty:
+                    col2.metric("Liga com Mais Dicas", dicas_por_liga.index[0])
+                    col3.metric("Dicas na Liga", dicas_por_liga.iloc[0])
+            else:
+                col1.metric("Total de Dicas", 0)
+                col2.metric("Liga com Mais Dicas", "-")
+                col3.metric("Dicas na Liga", 0)
+
+        else:
+            st.warning("⚠️ Nenhuma dica inteligente encontrada. Verifique os dados.")
+    else:
+        st.error("❌ Dados não disponíveis para análise")
 
 # Rodapé
 st.markdown("---")
-st.caption("Dados obtidos de football-data.co.uk | Sistema desenvolvido com Streamlit | FutAlgorithm ⚽")
+st.caption("Dados obtidos de Webscraping | Sistema desenvolvido com Streamlit | FutAlgorithm ®️")
